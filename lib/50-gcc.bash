@@ -155,14 +155,15 @@ build_host_gcc() {
          --disable-libquadmath            \
          --disable-libvtv                 \
          --disable-libsanitizer           \
-         --enable-languages=c,c++         \
+         --disable-libstdcxx              \
+         --enable-languages=c             \
          "${flags[@]}"
 
       log "Building..."
       qcheck pmake
 
       log "Installing..."
-      qcheck make DESTDIR="$SYSROOT" install
+      qcheck make install
       check ln -s gcc "$SYSROOT/usr/bin/cc"
    popd
    indent_log -1

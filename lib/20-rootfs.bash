@@ -45,11 +45,8 @@ create_rootfs() {
 create_files() {
    log "Creating system-configuration files..."
 
-   # Create /etc/fstab
-   echo "# file-system  mount-point  type   options          dump  fsck" >"${SYSROOT}/etc/fstab"
-
    for f in $(ls files/etc); do
-      install -m644 "$f" "$SYSROOT/$f"
+      install -m644 "files/etc/$f" "$SYSROOT/etc/$f"
    done
 }
 
