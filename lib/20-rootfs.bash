@@ -4,28 +4,61 @@ create_rootfs() {
    log "Creating a template rootfs..."
 
    # Create base directories.
-   mkdir -p "${SYSROOT}"/{dev,etc,home,mnt,opt,root,run,srv,sys,tmp}
+   mkdir -p "${SYSROOT}"/{boot,dev,etc,home,mnt,opt,root,run,srv,sys,tmp}
    mkdir -p "${SYSROOT}"/usr/{bin,include,lib,libexec,share,src}
    mkdir -p "${SYSROOT}"/var/{lock,log,spool,tmp}
 
    # Create symlinks.
-   ln -sf . "${SYSROOT}/usr/local"
-   ln -sf ../etc "${SYSROOT}/usr/etc"
-   ln -sf lib "${SYSROOT}/usr/lib${BITS}"
-   ln -sf usr/bin "${SYSROOT}/bin"
-   ln -sf usr/sbin "${SYSROOT}/sbin"
-   ln -sf usr/lib "${SYSROOT}/lib"
-   ln -sf usr/lib "${SYSROOT}/lib${BITS}"
+   symlink() {
+      [[ -L "$2" ]] || check ln -sf "$1" "$2"
+   }
+
+   symlink . "${SYSROOT}/usr/local"
+   symlink ../etc "${SYSROOT}/usr/etc"
+   symlink lib "${SYSROOT}/usr/lib${BITS}"
+   symlink bin "${SYSROOT}/usr/sbin"
+   symlink usr/bin "${SYSROOT}/bin"
+   symlink usr/sbin "${SYSROOT}/sbin"
+   symlink usr/lib "${SYSROOT}/lib"
+   symlink usr/lib "${SYSROOT}/lib${BITS}"
 
    # Change permissions.
-   chmod 700 "${SYSROOT}/root"
-   chmod 777 "${SYSROOT}/tmp"
-   chmod 777 "${SYSROOT}/var/tmp"
+   check chmod 700 "${SYSROOT}/root"
+   check chmod 777 "${SYSROOT}/tmp"
+   check chmod 777 "${SYSROOT}/var/tmp"
 
    # Create device files.
-   as_root mknod -m 600 "${SYSROOT}/dev/console"  c 5 1
-   as_root mknod -m 666 "${SYSROOT}/dev/null"     c 1 3 
-   as_root mknod -m 666 "${SYSROOT}/dev/zero"     c 1 5
-   as_root mknod -m 666 "${SYSROOT}/dev/full"     c 1 7
+   # Args:
+   #   $1 - path
+   #   $2 - mode
+   #   $3 - major
+   #   $4 - minor
+   mkchardev() {
+      [[ -c $1 ]] || check sudo mknod -m "$2" "$1" c "$3" "$4"
+   }
+   mkchardev "${SYSROOT}/dev/console"  600 5 1
+   mkchardev "${SYSROOT}/dev/null"     666 1 3
+   mkchardev "${SYSROOT}/dev/zero"     666 1 5
+   mkchardev "${SYSROOT}/dev/full"     666 1 7
 }
 
+create_files() {
+   log "Creating system-configuration files..."
+
+   # Create /etc/fstab
+   echo "# file-system  mount-point  type   options          dump  fsck" >"${SYSROOT}/etc/fstab"
+
+   for f in $(ls files/etc); do
+      install -m644 "$f" "$SYSROOT/$f"
+   done
+}
+
+change_owner() {
+   log "Changing the owner to root..."
+   sudo chown -R root:root "$SYSROOT"
+}
+
+create_initrd() {
+   log "Creating an inird..."
+   sudo find "$SYSROOT" | sudo cpio -o -H newc | gzip -c > initrd.img
+}

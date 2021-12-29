@@ -20,7 +20,10 @@ download_kernel() {
 
    KERNEL_TAR="${TOP}/sources/${file}"
 
-   download "${KERNEL_TAR}" "${url}"
+   if [[ ! -f $KERNEL_TAR ]]; then
+      log "Downloading linux..."
+      download "${KERNEL_TAR}" "${url}"
+   fi
 }
 
 # Print the ARCH variable for kernel builds.
@@ -49,7 +52,7 @@ kernel_arch() {
 #   $2 - host arch
 build_kheaders() {
    local ARCH builddir
-   ARCH="$(kernel_arch "$2")"
+   ARCH="$(kernel_arch "${TARGET}")"
    builddir="build/linux-${KERNEL_VERSION}"
 
    log "Building the kernel headers..."
@@ -57,27 +60,57 @@ build_kheaders() {
 
    # Clean old directories.
    rm -rf "$1/include"
-   rm -rf "${builddir}"
 
    mkdir -p "$1" build
 
    # Extract the kernel tarball if not present.
-   log "Extracting the kernel tarball..."
-   check tar -C build -xf "${KERNEL_TAR}"
+   if [[ ! -d ${builddir} ]]; then
+      log "Extracting..."
+      check tar -C build -xf "${KERNEL_TAR}"
+   fi
 
    pushd "${builddir}"
-      # Install the kernel headers.
-      log "Validating the kernel..."
+      log "Validating..."
       qcheck make ARCH="${ARCH}" mrproper
 
-      log "Creating the kernel headers..."
-      qcheck make ARCH="${ARCH}" headers
-      find usr/include -name '.*' -delete
-      rm -f usr/include/Makefile
-
-      log "Installing the kernel headers..."
-      qcheck cp -rv usr/include "$1/include"
+      log "Installing..."
+      qcheck make ARCH="${ARCH}" INSTALL_HDR_PATH="$1" headers_install
    popd
+
+   indent_log -1
+}
+
+build_kernel() {
+   local ARCH builddir
+   ARCH="$(kernel_arch "${TARGET}")"
+   builddir="build/linux-${KERNEL_VERSION}"
+
+   kmake() {
+      qcheck make ARCH="${ARCH}" CROSS_COMPILE="${CROSS}" "$@"
+   }
+
+   log "Building the kernel..."
+   indent_log +1
+
+   pushd "${builddir}"
+
+      log "Configuring..."
+      if [[ $KERNEL_CONFIG ]]; then
+         check cp "$KERNEL_CONFIG" .config
+      else
+         [[ $KERNEL_DEFCONFIG ]] && kmake "${KERNEL_DEFCONFIG}_defconfig" || kmake defconfig
+         [[ $ENABLE_MENUCONFIG = 1 ]] && make ARCH="${ARCH}" CROSS_COMPILE="${CROSS}" menuconfig
+      fi
+
+      log "Building..."
+      kmake -j"${JOBS}"
+
+      log "Installing..."
+      kmake INSTALL_PATH="${SYSROOT}/boot" install
+      grep -q CONFIG_MODULES=y .config && kmake INSTALL_MOD_PATH="${SYSROOT}" modules_install
+      install -m644 .config "${SYSROOT}/boot/config"
+
+   popd "${builddir}"
 
    indent_log -1
 }

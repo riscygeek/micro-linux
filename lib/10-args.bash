@@ -1,7 +1,45 @@
 
 
 print_help() {
-   echo "TODO: Help message."
+   echo "Automatic Linux System Builder."
+   echo
+   echo "Usage: $0 [OPTION]..."
+   echo
+   echo "Configuration:"
+   echo "  -h, --help                  Display this help and exit."
+   echo "  --clean                     Perform a clean build."
+   echo "  -v, --verbose               Don't suppress messages."
+   echo "  -q, --quiet                 Invert --verbose."
+   echo "  -jN, --jobs=N               The number of jobs to use for parallel make [$JOBS]."
+   echo "  --target=TARGET             Cross-compile to run on TARGET."
+   echo "  --kernel-version=VERSION    Specify the kernel version [$KERNEL_VERSION]."
+   echo "  --busybox-version=VERSION   Specify the busybox version [$BUSYBOX_VERSION]."
+   echo "  --binutils-version=VERSION  Specify the binutils version [$BINUTILS_VERSION]."
+   echo "  --gcc-version=VERSION       Specify the gcc version [$GCC_VERSION]."
+   echo "  --make-version=VERSION      Specify the make version [$MAKE_VERSION]."
+   echo "  --libc-version=VERSION      Specify the libc version [musl: $MUSL_VERSION, glibc: $GLIBC_VERSION]."
+   echo "  --bash-version=VERSION      Specify the bash version [$BASH_VERSION]."
+   echo "  --kernel-defconfig=NAME     Specify the kernel defconfig."
+   echo "  --kernel-config=CONFIG      Specify a kernel config."
+   echo "  --busybox-config=CONFIG     Specify a busybox config."
+   echo "  --with-arch=ARCH            Gets passed to configure."
+   echo
+   echo "Features:"
+   echo "  --disable-native-toolchain  Don't build a native toolchain."
+   echo "  --disable-kernel            Don't build a kernel."
+   echo "  --disable-bash              Don't build the Bourne Again Shell."
+   echo "  --disable-menuconfig        Don't show the menuconfig when building with defconfig."
+   echo
+   echo "Some influential environment variables:"
+   echo "  CC          C compiler command."
+   echo "  CPP         C/C++ preprocessor."
+   echo "  CXX         C++ compiler command."
+   echo "  CFLAGS      C compiler flags."
+   echo "  CPPFLAGS    C/C++ preprocessor flags."
+   echo "  CXXFLAGS    C++ compiler flags."
+   echo "  LDFLAGS     Linker flags."
+   echo "  LIBS        Libraries to pass to the linker."
+
    exit 0
 }
 
@@ -12,15 +50,29 @@ parse_cmdline_args() {
 
    while [[ $@ ]]; do
       case "$1" in
-      --help)
+      -h|--help)
          print_help
          ;;
       --clean)
          log "Cleaning old directories..."
-         rm -rf "${BUILD}" "${SYSROOT}" "${TOOLS}"
+         sudo rm -rf "$SYSROOT"
+         rm -rf "build" "$TOOLS"
          ;;
-      --verbose)
+      -v|--verbose)
          VERBOSE=1
+         ;;
+      -q|--quiet)
+         VERBOSE=0
+         ;;
+      -j)
+         JOBS="$2"
+         shift
+         ;;
+      -j*)
+         JOBS="$(sed 's/^-j//' <<< "$1")"
+         ;;
+      --jobs=*)
+         get_arg JOBS "$1"
          ;;
       --target=*)
          get_arg TARGET "$1"
@@ -36,6 +88,54 @@ parse_cmdline_args() {
          ;;
       --gcc-version=*)
          get_arg GCC_VERSION "$1"
+         ;;
+      --make-version=*)
+         get_arg MAKE_VERSION "$1"
+         ;;
+      --libc-version=*)
+         get_arg LIBC_VERSION "$1"
+         ;;
+      --bash-version=*)
+         get_arg BASH_VERSION "$1"
+         ;;
+      --kernel-defconfig=*)
+         get_arg KERNEL_DEFCONFIG "$1"
+         ;;
+      --kernel-config=*)
+         get_arg KERNEL_CONFIG "$1"
+         ;;
+      --busybox-config=*)
+         get_arg BUSYBOX_CONFIG "$1"
+         ;;
+      --with-arch=*)
+         get_arg WITH_ARCH "$1"
+         ;;
+      --with-cpu=*)
+         get_arg WITH_CPU "$1"
+         ;;
+      --enable-native-toolchain)
+         ENABLE_NATIVE_TOOLCHAIN=1
+         ;;
+      --disable-native-toolchain)
+         ENABLE_NATIVE_TOOLCHAIN=0
+         ;;
+      --enable-kernel)
+         ENABLE_KERNEL=1
+         ;;
+      --disable-kernel)
+         ENABLE_KERNEL=0
+         ;;
+      --enable-bash)
+         ENABLE_BASH=1
+         ;;
+      --disable-bash)
+         ENABLE_BASH=0
+         ;;
+      --enable-menuconfig)
+         ENABLE_MENUCONFIG=1
+         ;;
+      --disable-menuconfig)
+         ENABLE_MENUCONFIG=0
          ;;
       -*)
          fail "invalid option: $1"
