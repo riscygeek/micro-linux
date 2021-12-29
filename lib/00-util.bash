@@ -52,7 +52,7 @@ check() {
 qcheck() {
    local log
    if [[ $VERBOSE = 0 ]]; then
-      log="$("$@" 2>&1)" || { echo "${log}"; fail "failed to run: $@"; }
+      log="$("$@" 2>&1)" || { tee "${TOP}/error.log" <<< "${log}"; fail "failed to run: $@"; }
    else
       check "$@"
    fi

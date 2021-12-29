@@ -75,7 +75,9 @@ build_host_binutils() {
       qcheck ../configure                 \
          --prefix=/usr                    \
          --build="$BUILD"                 \
+         --target="$TARGET"               \
          --host="$TARGET"                 \
+         --program-prefix=                \
          --disable-nls                    \
          --disable-multilib               \
          --disable-werror

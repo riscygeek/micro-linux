@@ -44,6 +44,8 @@ build_cross_gcc_stage1() {
       qcheck ./contrib/download_prerequisites
    popd
 
+   rm -rf "${builddir}/build"
+
    mkdir "${builddir}/build"
    pushd "${builddir}/build"
       log "Configuring..."
@@ -142,21 +144,23 @@ build_host_gcc() {
    mkdir "${builddir}/build"
    pushd "${builddir}/build"
       log "Configuring..."
-      qcheck ../configure                 \
-         --prefix="/usr"                  \
-         --build="$BUILD"                 \
-         --host="$TARGET"                 \
-         --with-build-sysroot="$SYSROOT"  \
-         --disable-nls                    \
-         --disable-shared                 \
-         --disable-multilib               \
-         --disable-libatomic              \
-         --disable-libgomp                \
-         --disable-libquadmath            \
-         --disable-libvtv                 \
-         --disable-libsanitizer           \
-         --disable-libstdcxx              \
-         --enable-languages=c             \
+      CC="${TARGET}-gcc" qcheck ../configure \
+         --prefix="/usr"                     \
+         --build="$BUILD"                    \
+         --target="$TARGET"                  \
+         --host="$TARGET"                    \
+         --program-prefix=                   \
+         --with-build-sysroot="$SYSROOT"     \
+         --disable-nls                       \
+         --disable-shared                    \
+         --disable-multilib                  \
+         --disable-libatomic                 \
+         --disable-libgomp                   \
+         --disable-libquadmath               \
+         --disable-libvtv                    \
+         --disable-libsanitizer              \
+         --disable-libstdcxx                 \
+         --enable-languages=c                \
          "${flags[@]}"
 
       log "Building..."

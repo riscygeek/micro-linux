@@ -5,9 +5,15 @@ print_help() {
    echo
    echo "Usage: $0 [OPTION]..."
    echo
-   echo "Configuration:"
+   echo "Actions:"
    echo "  -h, --help                  Display this help and exit."
-   echo "  --clean                     Perform a clean build."
+   echo "  --download                  Just download the dependencies."
+   echo "  --build                     Build a rootfs."
+   echo "  --build-toolchain           Just build the toolchain."
+   echo "  --clean                     Delete the rootfs and build directories."
+   echo "  --create-e2fs               Just create an ext2 image and exit."
+   echo
+   echo "Configuration:"
    echo "  -v, --verbose               Don't suppress messages."
    echo "  -q, --quiet                 Invert --verbose."
    echo "  -jN, --jobs=N               The number of jobs to use for parallel make [$JOBS]."
@@ -19,17 +25,19 @@ print_help() {
    echo "  --make-version=VERSION      Specify the make version [$MAKE_VERSION]."
    echo "  --libc-version=VERSION      Specify the libc version [musl: $MUSL_VERSION, glibc: $GLIBC_VERSION]."
    echo "  --bash-version=VERSION      Specify the bash version [$BASH_VERSION]."
+   echo "  --iana-etc-version=VERSION  Specify the iana-etc version [$IANA_ETC_VERSION]."
    echo "  --kernel-defconfig=NAME     Specify the kernel defconfig."
    echo "  --kernel-config=CONFIG      Specify a kernel config."
    echo "  --busybox-config=CONFIG     Specify a busybox config."
    echo "  --with-arch=ARCH            Gets passed to configure."
-   echo "  --create-e2fs               Just create an ext2 image and exit."
+   echo "  --with-toolchain=PATH       Use a different toolchain [$TOOLS]."
    echo
    echo "Features:"
    echo "  --disable-native-toolchain  Don't build a native toolchain."
    echo "  --disable-kernel            Don't build a kernel."
    echo "  --disable-bash              Don't build the Bourne Again Shell."
    echo "  --disable-iana-etc          Don't install the iana-etc package."
+   echo "  --enable-man-pages          Install the man-pages package."
    echo "  --disable-menuconfig        Don't show the menuconfig when building with defconfig."
    echo "  --enable-e2fs               Create an ext2 image."
    echo
@@ -59,7 +67,16 @@ parse_cmdline_args() {
       --clean)
          log "Cleaning old directories..."
          sudo rm -rf "$SYSROOT"
-         rm -rf "build" "$TOOLS"
+         rm -rf "build"
+         ;;
+      --download)
+         DO_BUILD=d
+         ;;
+      --build)
+         DO_BUILD=a
+         ;;
+      --build-toolchain)
+         DO_BUILD=t
          ;;
       -v|--verbose)
          VERBOSE=1
@@ -116,6 +133,10 @@ parse_cmdline_args() {
       --with-cpu=*)
          get_arg WITH_CPU "$1"
          ;;
+      --with-toolchain=*)
+         get_arg TOOLS "$1"
+         check_cross_gcc
+         ;;
       --enable-native-toolchain)
          ENABLE_NATIVE_TOOLCHAIN=1
          ;;
@@ -151,6 +172,12 @@ parse_cmdline_args() {
          ;;
       --disable-iana-etc)
          ENABLE_IANA_ETC=0
+         ;;
+      --enable-man-pages)
+         ENABLE_MAN_PAGES=1
+         ;;
+      --disable-man-pages)
+         ENABLE_MAN_PAGES=0
          ;;
       --create-e2fs)
          create_e2fs

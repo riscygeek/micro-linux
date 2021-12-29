@@ -58,9 +58,6 @@ build_kheaders() {
    log "Building the kernel headers..."
    indent_log +1
 
-   # Clean old directories.
-   rm -rf "$1/include"
-
    mkdir -p "$1" build
 
    # Extract the kernel tarball if not present.

@@ -10,7 +10,7 @@ download_iana_etc() {
       url="http://sethwklein.net/${file}"
    else
       file="iana-etc-$1.tar.gz"
-      url="https://github.com/Mic92/iana-etc/releases/download/20210611/${file}"
+      url="https://github.com/Mic92/iana-etc/releases/download/${IANA_ETC_VERSION}/${file}"
    fi
    IANA_ETC_TAR="${TOP}/sources/${file}"
 
