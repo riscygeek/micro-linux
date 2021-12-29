@@ -22,11 +22,15 @@ create_rootfs() {
    symlink usr/sbin "${SYSROOT}/sbin"
    symlink usr/lib "${SYSROOT}/lib"
    symlink usr/lib "${SYSROOT}/lib${BITS}"
+   symlink ../proc/mounts "${SYSROOT}/etc/mtab"
+
+   check touch "${SYSROOT}/var/log/lastlog"
 
    # Change permissions.
    check chmod 700 "${SYSROOT}/root"
    check chmod 777 "${SYSROOT}/tmp"
    check chmod 777 "${SYSROOT}/var/tmp"
+   check chmod 664 "${SYSROOT}/var/log/lastlog"
 
    # Create device files.
    # Args:
@@ -72,3 +76,11 @@ create_e2fs() {
    log "Unmounting ext2 image..."
    sudo umount "${mp}"
 }
+
+strip_rootfs() {
+   log "Stripping the rootfs..."
+   for f in $(find "$SYSROOT/bin" -type f) $(find "$SYSROOT/usr/libexec" -type f); do
+      "${CROSS}strip" "$f" &>/dev/null
+   done
+}
+

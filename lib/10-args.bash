@@ -40,6 +40,7 @@ print_help() {
    echo "  --enable-man-pages          Install the man-pages package."
    echo "  --disable-menuconfig        Don't show the menuconfig when building with defconfig."
    echo "  --enable-e2fs               Create an ext2 image."
+   echo "  --enable-strip              Remove debug symbols in the rootfs."
    echo
    echo "Some influential environment variables:"
    echo "  CC          C compiler command."
@@ -178,6 +179,12 @@ parse_cmdline_args() {
          ;;
       --disable-man-pages)
          ENABLE_MAN_PAGES=0
+         ;;
+      --enable-strip)
+         ENABLE_STRIP=1
+         ;;
+      --disable-strip)
+         ENABLE_STRIP=0
          ;;
       --create-e2fs)
          create_e2fs

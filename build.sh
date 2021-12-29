@@ -19,6 +19,7 @@ ENABLE_MENUCONFIG=1
 ENABLE_E2FS=0
 ENABLE_IANA_ETC=1
 ENABLE_MAN_PAGES=0
+ENABLE_STRIP=0
 
 TOP="$PWD"
 SYSROOT="$PWD/rootfs"
@@ -127,6 +128,9 @@ build_host_busybox
 
 [[ $ENABLE_KERNEL = 1 ]] && build_kernel
 
+[[ $ENABLE_STRIP = 1 ]] && strip_rootfs
+
 create_files
 
 [[ $ENABLE_E2FS = 1 ]] && create_e2fs
+

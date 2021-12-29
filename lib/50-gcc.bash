@@ -168,7 +168,7 @@ build_host_gcc() {
 
       log "Installing..."
       qcheck make DESTDIR="$SYSROOT" install
-      check ln -s gcc "$SYSROOT/usr/bin/cc"
+      check ln -sf gcc "$SYSROOT/usr/bin/cc"
    popd
    indent_log -1
 }
