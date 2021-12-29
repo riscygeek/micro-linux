@@ -23,12 +23,14 @@ print_help() {
    echo "  --kernel-config=CONFIG      Specify a kernel config."
    echo "  --busybox-config=CONFIG     Specify a busybox config."
    echo "  --with-arch=ARCH            Gets passed to configure."
+   echo "  --create-e2fs               Just create an ext2 image and exit."
    echo
    echo "Features:"
    echo "  --disable-native-toolchain  Don't build a native toolchain."
    echo "  --disable-kernel            Don't build a kernel."
    echo "  --disable-bash              Don't build the Bourne Again Shell."
    echo "  --disable-menuconfig        Don't show the menuconfig when building with defconfig."
+   echo "  --enable-e2fs               Create an ext2 image."
    echo
    echo "Some influential environment variables:"
    echo "  CC          C compiler command."
@@ -136,6 +138,16 @@ parse_cmdline_args() {
          ;;
       --disable-menuconfig)
          ENABLE_MENUCONFIG=0
+         ;;
+      --enable-e2fs)
+         ENABLE_E2FS=1
+         ;;
+      --disable-e2fs)
+         ENABLE_E2FS=0
+         ;;
+      --create-e2fs)
+         create_e2fs
+         exit
          ;;
       -*)
          fail "invalid option: $1"

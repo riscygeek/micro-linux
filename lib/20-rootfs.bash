@@ -4,7 +4,7 @@ create_rootfs() {
    log "Creating a template rootfs..."
 
    # Create base directories.
-   mkdir -p "${SYSROOT}"/{boot,dev,etc,home,mnt,opt,root,run,srv,sys,tmp}
+   mkdir -p "${SYSROOT}"/{boot,dev,etc,home,mnt,opt,proc,root,run,srv,sys,tmp}
    mkdir -p "${SYSROOT}"/usr/{bin,include,lib,libexec,share,src}
    mkdir -p "${SYSROOT}"/var/{lock,log,spool,tmp}
 
@@ -50,12 +50,24 @@ create_files() {
    done
 }
 
-change_owner() {
-   log "Changing the owner to root..."
-   sudo chown -R root:root "$SYSROOT"
-}
+create_e2fs() {
+   local mp
+   mp="/mnt/micro-linux-rootfs"
 
-create_initrd() {
-   log "Creating an inird..."
-   sudo find "$SYSROOT" | sudo cpio -o -H newc | gzip -c > initrd.img
+   log "Creating ext2 image..."
+   qcheck fallocate -l 2G rootfs.ext2
+   qcheck mke2fs rootfs.ext2
+   sudo mkdir -p "${mp}"
+
+   log "Mounting ext2 image..."
+   sudo mount rootfs.ext2 "${mp}"
+   
+   log "Copying rootfs -> ext2 image..."
+   qcheck sudo cp -ax rootfs/* "${mp}/"
+
+   log "Changing owner to root..."
+   qcheck sudo chown 0:0 -R "${mp}"
+
+   log "Unmounting ext2 image..."
+   sudo umount "${mp}"
 }
