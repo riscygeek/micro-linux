@@ -14,7 +14,7 @@ download_kernel() {
       ;;
    *)
       file="linux-$1.tar.xz"
-      url+="v$(cut -d. -f1 <<< "$1")/${file}"
+      url+="/v$(cut -d. -f1 <<< "$1").x/${file}"
       ;;
    esac
 
@@ -50,16 +50,36 @@ kernel_arch() {
 build_kheaders() {
    local ARCH builddir
    ARCH="$(kernel_arch "$2")"
-   builddir="build/kheaders-${ARCH}"
+   builddir="build/linux-${KERNEL_VERSION}"
+
+   log "Building the kernel headers..."
+   indent_log +1
+
+   # Clean old directories.
+   rm -rf "$1/include"
+   rm -rf "${builddir}"
+
+   mkdir -p "$1" build
 
    # Extract the kernel tarball if not present.
-   [[ -d ${builddir} ]] || { mkdir -p build; tar -C "${builddir}" -xf "${TOP}/sources/${KERNEL_TAR}"; }
+   log "Extracting the kernel tarball..."
+   check tar -C build -xf "${KERNEL_TAR}"
 
    pushd "${builddir}"
       # Install the kernel headers.
-      make ARCH="${ARCH}" headers_check || exit 1
-      make ARCH="${ARCH}" INSTALL_HDR_PATH="$1/$2/include" headers_install || exit 1
+      log "Validating the kernel..."
+      qcheck make ARCH="${ARCH}" mrproper
+
+      log "Creating the kernel headers..."
+      qcheck make ARCH="${ARCH}" headers
+      find usr/include -name '.*' -delete
+      rm -f usr/include/Makefile
+
+      log "Installing the kernel headers..."
+      qcheck cp -rv usr/include "$1/include"
    popd
+
+   indent_log -1
 }
 
 

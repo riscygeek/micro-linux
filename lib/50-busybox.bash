@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 
 download_busybox() {
    local file url

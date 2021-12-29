@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 
 # Download the binutils and set the BINUTILS_TAR variable.
 # Args:
@@ -14,30 +15,42 @@ download_binutils() {
 # Build the GNU binutils.
 # Args:
 #   $1 - prefix
-#   $2 - DESTDIR
-#   $3 - host arch
-#   $4 - target arch
-build_binutils() {
+#   $2 - target arch
+build_cross_binutils() {
    local DESTDIR builddir
+   builddir="build/binutils-${BINUTILS_VERSION}"
 
-   # Determine the `DESTDIR` variable.
-   [[ $2 ]] && DESTDIR="$2" || DESTDIR="$1"
+   log "Building the cross-binutils..."
+   indent_log +1
 
-   # Determine the build directory.
-   [[ $3 = $4 ]] && builddir="${TOP}/build/binutils" || builddi="${TOP}/build/cross-binutils"
+   mkdir -p "$1" build
 
-   mkdir -p build
-   tar -C "${builddir}" -xf "${TOP}/sources/${BINUTILS_TAR}"
+   if [[ ! -d ${builddir} ]]; then
+      log "Extracting the tar-ball..."
+      check tar -C build -xf "${BINUTILS_TAR}"
+   fi
    
    mkdir "${builddir}/build"
    pushd "${builddir}/build"
       # Configure binutils.
-      ../configure --prefix="$1" --host="$3" --target="$4" --disable-nls --disable-multilib
+      log "Configuring..."
+      qcheck ../configure              \
+         --prefix="$1"                 \
+         --host="$(gcc -dumpmachine)"  \
+         --target="$2"                 \
+         --with-sysroot="${SYSROOT}"   \
+         --disable-nls                 \
+         --disable-multilib            \
+         --disable-werror
 
       # Build binutils.
-      make -j$(nproc)
+      log "Building..."
+      qcheck make -j$(nproc)
 
       # Install binutils.
-      make DESTDIR="${DESTDIR}" install
+      log "Installing..."
+      qcheck make install
    popd
+
+   indent_log -1
 }
