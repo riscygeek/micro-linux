@@ -7,6 +7,7 @@ create_rootfs() {
    mkdir -p "${SYSROOT}"/{boot,dev,etc,home,mnt,opt,proc,root,run,srv,sys,tmp}
    mkdir -p "${SYSROOT}"/usr/{bin,include,lib,libexec,share,src}
    mkdir -p "${SYSROOT}"/var/{lock,log,run,spool,tmp}
+   mkdir -p "${SYSROOT}"/etc/network/if-{post-{up,down},pre-{up,down},up,down}.d
 
    # Create symlinks.
    symlink() {
