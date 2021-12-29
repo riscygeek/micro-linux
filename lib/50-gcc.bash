@@ -143,7 +143,7 @@ build_host_gcc() {
    pushd "${builddir}/build"
       log "Configuring..."
       qcheck ../configure                 \
-         --prefix="$TOOLS"                \
+         --prefix="/usr"                  \
          --build="$BUILD"                 \
          --host="$TARGET"                 \
          --with-build-sysroot="$SYSROOT"  \
@@ -163,7 +163,7 @@ build_host_gcc() {
       qcheck pmake
 
       log "Installing..."
-      qcheck make install
+      qcheck make DESTDIR="$SYSROOT" install
       check ln -s gcc "$SYSROOT/usr/bin/cc"
    popd
    indent_log -1
