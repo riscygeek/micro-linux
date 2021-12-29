@@ -1,0 +1,3 @@
+- Packages: Groff
+- Stripping of /bin and /usr/libexec/...
+- More modular --enable-... and package management.
