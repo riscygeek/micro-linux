@@ -45,8 +45,8 @@ create_rootfs() {
 create_files() {
    log "Creating system-configuration files..."
 
-   for f in $(ls files/etc); do
-      install -m644 "files/etc/$f" "$SYSROOT/etc/$f"
+   for f in $(ls files); do
+      cp -r "files/$f" "$SYSROOT"
    done
 }
 

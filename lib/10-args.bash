@@ -29,6 +29,7 @@ print_help() {
    echo "  --disable-native-toolchain  Don't build a native toolchain."
    echo "  --disable-kernel            Don't build a kernel."
    echo "  --disable-bash              Don't build the Bourne Again Shell."
+   echo "  --disable-iana-etc          Don't install the iana-etc package."
    echo "  --disable-menuconfig        Don't show the menuconfig when building with defconfig."
    echo "  --enable-e2fs               Create an ext2 image."
    echo
@@ -144,6 +145,12 @@ parse_cmdline_args() {
          ;;
       --disable-e2fs)
          ENABLE_E2FS=0
+         ;;
+      --enable-iana-etc)
+         ENABLE_IANA_ETC=1
+         ;;
+      --disable-iana-etc)
+         ENABLE_IANA_ETC=0
          ;;
       --create-e2fs)
          create_e2fs

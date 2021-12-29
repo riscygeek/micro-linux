@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Download the make and set the MAKE_TAR variable.
+# Download make and set the MAKE_TAR variable.
 # Args:
 #   $1 - version
 download_make() {
