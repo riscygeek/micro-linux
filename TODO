@@ -1,2 +1,5 @@
-- Create a simple package manager
+# Bootstrap Tool
 - More modular --enable-... and package management.
+
+# Minipkg
+- Operations: search, info
