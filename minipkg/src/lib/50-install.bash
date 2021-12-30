@@ -175,13 +175,8 @@ find_binpkg() {
 
 # Interactively install packages.
 # Args:
-#   $1 - `--just-build` (optional)
+#   $1 - `--just-download` (optional)
 #   $@ - packages
-# Variables:
-#   depth:
-#     0: download the source code
-#     1: build a binpkg
-#     2: install the binpkg
 install_packages_i() {
    local -a pkgs binpkgs will_be_installed
    local pkg binpkg str pkgver pkg_conflicts other remove provides subpkg
@@ -333,9 +328,6 @@ install_packages_i() {
    fi
 }
 
-build_packages_i() {
-   depth=1 install_packages_i "$@"
-}
 download_source_i() {
    depth=0 install_packages_i "$@"
 }

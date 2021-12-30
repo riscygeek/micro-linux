@@ -8,7 +8,6 @@ print_help() {
    echo "Operations:"
    echo "  minipkg help"
    echo "  minipkg install <package(s)>"
-   echo "  minipkg build <package(s)>"
    echo "  minipkg remove <package(s)>"
    echo "  minipkg purge <package(s)>"
    echo "  minipkg list [options]"
@@ -61,7 +60,7 @@ parse_cmdline_args() {
       print_help
       exit 0
       ;;
-   install|list|remove|purge|clean-cache|build|info|download-source)
+   install|list|remove|purge|clean-cache|info|download-source)
       OPERATION="$1"
       shift
       ;;
@@ -86,10 +85,6 @@ parse_cmdline_args() {
    purge)
       [[ $@ ]] || fail "Usage: minipkg purge <package(s)>"
       purge_packages_i "$@"
-      ;;
-   build)
-      [[ $@ ]] || fail "Usage: minipkg build <package(s)>"
-      build_packages_i "$@"
       ;;
    download-source)
       [[ $@ ]] || fail "Usage: minipkg download-source <package(s)>"
