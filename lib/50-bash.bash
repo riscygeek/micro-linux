@@ -17,7 +17,7 @@ download_bash() {
 
 build_host_bash() {
    local builddir
-   builddir="build/bash-${BASH_VERSION}"
+   builddir="${TOP}/build/bash-${BASH_VERSION}"
 
    log "Building bash..."
    indent_log +1
@@ -41,6 +41,12 @@ build_host_bash() {
 
       log "Installing..."
       qcheck make DESTDIR="$SYSROOT" install
+
+      if [[ $ENABLE_MINIPKG = 1 ]]; then
+         mkdir -p tmp-install
+         qcheck make DESTDIR="$PWD/tmp-install" install
+         minipkg_add "bash" "$BASH_VERSION" tmp-install
+      fi
    popd
    indent_log -1
 }

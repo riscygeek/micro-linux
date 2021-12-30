@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+VERSION="1.0"
+
+# These are replaced by install.sh!
+ROOT="$(realpath "$(dirname "$0")/../tmp")"
+LIBDIR="$(realpath "$(dirname "$0")/lib")"
+REPODIR="$(realpath "$(dirname "$0")/../repo")"
+
+PKGDIR="$ROOT/var/db/minipkg/packages"
+BUILDDIR="$ROOT/var/tmp/minipkg"
+
+for f in $(find "${LIBDIR}/" -type f); do
+   source "$f" || exit 1
+done
+
+parse_cmdline_args "$@"
+
+

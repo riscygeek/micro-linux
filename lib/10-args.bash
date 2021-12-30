@@ -44,6 +44,7 @@ print_help() {
    echo "  --disable-kernel            Don't build a kernel."
    echo "  --disable-bash              Don't build the Bourne Again Shell."
    echo "  --disable-iana-etc          Don't install the iana-etc package."
+   echo "  --disable-minipkg           Don't install the minipkg package manager."
    echo "  --enable-man-pages          Install the man-pages package."
    echo "  --disable-menuconfig        Don't show the menuconfig when building with defconfig."
    echo "  --enable-e2fs               Create an ext2 image."
@@ -223,6 +224,12 @@ parse_cmdline_args() {
          ;;
       --disable-strip)
          ENABLE_STRIP=0
+         ;;
+      --enable-minipkg)
+         ENABLE_MINIPKG=1
+         ;;
+      --disable-minipkg)
+         ENABLE_MINIPKG=0
          ;;
       --create-e2fs)
          create_e2fs

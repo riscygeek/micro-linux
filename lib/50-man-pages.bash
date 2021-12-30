@@ -31,6 +31,12 @@ build_host_man_pages() {
    pushd "${builddir}"
       log "Installing..."
       qcheck make prefix="$SYSROOT/usr" install
+
+      if [[ $ENABLE_MINIPKG = 1 ]]; then
+         mkdir -p tmp-install/usr
+         qcheck make prefix="$PWD/tmp-install/usr" install
+         minipkg_add "man-pages" "$MAN_PAGES_VERSION" tmp-install
+      fi
    popd
 
    indent_log -1

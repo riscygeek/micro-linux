@@ -42,6 +42,12 @@ build_host_make() {
 
       log "Installing..."
       qcheck make DESTDIR="$SYSROOT" install
+
+      if [[ $ENABLE_MINIPKG = 1 ]]; then
+         mkdir -p tmp-install
+         qcheck make DESTDIR="$PWD/tmp-install" install
+         minipkg_add "make" "$MAKE_VERSION" tmp-install
+      fi
    popd
 
    indent_log -1

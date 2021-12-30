@@ -47,10 +47,7 @@ kernel_arch() {
 }
 
 # Install the kernel headers.
-# Args:
-#   $1 - DESTDIR
-#   $2 - host arch
-build_kheaders() {
+build_host_kheaders() {
    local ARCH builddir
    ARCH="$(kernel_arch "${TARGET}")"
    builddir="build/linux-${KERNEL_VERSION}"
@@ -58,7 +55,7 @@ build_kheaders() {
    log "Building the kernel headers..."
    indent_log +1
 
-   mkdir -p "$1" build
+   mkdir -p build
 
    # Extract the kernel tarball if not present.
    if [[ ! -d ${builddir} ]]; then
@@ -71,7 +68,13 @@ build_kheaders() {
       qcheck make ARCH="${ARCH}" mrproper
 
       log "Installing..."
-      qcheck make ARCH="${ARCH}" INSTALL_HDR_PATH="$1" headers_install
+      qcheck make ARCH="${ARCH}" INSTALL_HDR_PATH="$SYSROOT/usr" headers_install
+
+      if [[ $ENABLE_MINIPKG = 1 ]]; then
+         mkdir -p tmp-install/usr
+         qcheck make ARCH="${ARCH}" INSTALL_HDR_PATH="tmp-install/usr" headers_install
+         minipkg_add "linux-headers" "$KERNEL_VERSION" tmp-install
+      fi
    popd
 
    indent_log -1
@@ -80,7 +83,7 @@ build_kheaders() {
 build_kernel() {
    local ARCH builddir
    ARCH="$(kernel_arch "${TARGET}")"
-   builddir="build/linux-${KERNEL_VERSION}"
+   builddir="${TOP}/build/linux-${KERNEL_VERSION}"
 
    kmake() {
       qcheck make ARCH="${ARCH}" CROSS_COMPILE="${CROSS}" "$@"
@@ -119,6 +122,14 @@ build_kernel() {
       kmake INSTALL_PATH="${SYSROOT}/boot" install
       grep -q CONFIG_MODULES=y .config && kmake INSTALL_MOD_PATH="${SYSROOT}" modules_install
       install -m644 .config "${SYSROOT}/boot/config"
+
+      if [[ $ENABLE_MINIPKG = 1 ]]; then
+         mkdir -p tmp-install/boot
+         kmake INSTALL_PATH="$PWD/tmp-install/boot" install
+         grep -q CONFIG_MODULES=y .config && kmake INSTALL_MOD_PATH="$PWD/tmp-install" modules_install
+         install -m644 .config "tmp-install/boot/config"
+         minipkg_add "linux" "$KERNEL_VERSION" tmp-install
+      fi
 
    popd
 

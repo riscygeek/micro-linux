@@ -1,0 +1,22 @@
+pkgname=file
+pkgver=5.41
+url="http://www.darwinsys.com/file"
+
+bdepends=()
+depends=()
+
+sources=(http://ftp.astron.com/pub/file/file-${pkgver}.tar.gz)
+
+prepare() {
+   tar -xf "${S}/file-${pkgver}.tar.gz"
+   cd "file-${pkgver}"
+}
+
+build() {
+   ./configure --prefix=/usr
+   make
+}
+
+package() {
+   make DESTDIR="$D" install
+}

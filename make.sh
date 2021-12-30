@@ -14,6 +14,7 @@ MAN_PAGES_VERSION="5.13"
 GMP_VERSION="6.2.1"
 MPC_VERSION="1.2.1"
 MPFR_VERSION="4.1.0"
+MINIPKG_VERSION="$(./minipkg/src/minipkg --version)"
 
 ENABLE_NATIVE_TOOLCHAIN=1
 ENABLE_KERNEL=1
@@ -24,6 +25,7 @@ ENABLE_IANA_ETC=1
 ENABLE_MAN_PAGES=0
 ENABLE_STRIP=0
 E2FS_SIZE=2G
+ENABLE_MINIPKG=1
 
 TOP="$PWD"
 SYSROOT="$PWD/rootfs"
@@ -84,7 +86,7 @@ create_rootfs
 
 [[ $DO_BUILD = k ]] && build_kernel && exit 0
 
-build_kheaders "${SYSROOT}/usr"
+build_host_kheaders
 
 
 if [[ $TARGET != $BUILD  ]]; then
@@ -146,6 +148,8 @@ build_host_busybox
 [[ $ENABLE_KERNEL = 1 ]] && build_kernel
 
 [[ $ENABLE_STRIP = 1 ]] && strip_rootfs
+
+[[ $ENABLE_MINIPKG = 1 ]] && build_host_minipkg
 
 create_files
 

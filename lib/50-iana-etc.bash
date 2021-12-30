@@ -35,6 +35,12 @@ build_host_iana_etc() {
    pushd "${builddir}"
       log "Installing..."
       cp services protocols "$SYSROOT/etc"
+
+      if [[ $ENABLE_MINIPKG = 1 ]]; then
+         mkdir -p tmp-install/etc
+         cp services protocols "tmp-install/etc"
+         minipkg_add "iana-etc" "$IANA_ETC_VERSION" tmp-install
+      fi
    popd
    indent_log -1
 }

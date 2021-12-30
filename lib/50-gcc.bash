@@ -59,7 +59,7 @@ create_flags() {
 
 gcc_unpack_runtime() {
    pushd "$1"
-      [[ -d gmp && -d mpc && -d mpfr ]] && return 0
+      [[ -d gmp && -d mpc && -d mpfr ]] && popd && return 0
       log "Unpacking the runtime dependencies..."
       [[ ! -d gmp ]] && check tar -xf "$GMP_TAR" && check mv "gmp-$GMP_VERSION" "gmp"
       [[ ! -d mpc ]] && check tar -xf "$MPC_TAR" && check mv "mpc-$MPC_VERSION" "mpc"
@@ -216,7 +216,13 @@ build_host_gcc() {
       qcheck make DESTDIR="$SYSROOT" install
       check ln -sf gcc "$SYSROOT/usr/bin/cc"
 
-      check cp "$GCC_TAR" "$SYSROOT/usr/src/"
+      if [[ $ENABLE_MINIPKG = 1 ]]; then
+         mkdir -p tmp-install
+         qcheck make DESTDIR="$PWD/tmp-install" install
+         minipkg_add "gcc" "$GCC_VERSION-stage1" tmp-install
+      else
+         check cp "$GCC_TAR" "$SYSROOT/usr/src/"
+      fi
    popd
    indent_log -1
 }

@@ -76,6 +76,12 @@ build_musl() {
 
       log "Installing..."
       DESTDIR="${SYSROOT}" qcheck make install
+
+      if [[ $ENABLE_MINIPKG = 1 ]]; then
+         mkdir -p tmp-install
+         DESTDIR="$PWD/tmp-install" qcheck make install
+         minipkg_add "musl" "$LIBC_VERSION" tmp-install
+      fi
    popd
 
    indent_log -1
@@ -112,6 +118,12 @@ build_glibc() {
 
       log "Installing..."
       qcheck make DESTDIR="$SYSROOT" install
+
+      if [[ $ENABLE_MINIPKG = 1 ]]; then
+         mkdir -p tmp-install
+         qcheck make DESTDIR="$PWD/tmp-install" install
+         minipkg_add "glibc" "$LIBC_VERSION" tmp-install
+      fi
 
       # Fix from https://linuxfromscratch.org/lfs/view/stable/chapter05/glibc.html
       sed -i '/RTLDLIST=/s@/usr@@g' "$SYSROOT/usr/bin/ldd"

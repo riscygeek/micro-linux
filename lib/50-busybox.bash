@@ -16,7 +16,7 @@ download_busybox() {
 build_host_busybox() {
    local ARCH builddir
    ARCH="$(kernel_arch "${TARGET}")"
-   builddir="build/busybox-${BUSYBOX_VERSION}"
+   builddir="${TOP}/build/busybox-${BUSYBOX_VERSION}"
 
    log "Building busybox..."
    indent_log +1
@@ -65,6 +65,12 @@ build_host_busybox() {
       log "Installing..."
       bbmake CONFIG_PREFIX="${SYSROOT}" install
       install -Dm755 examples/depmod.pl "${TOOLS}/bin/depmod.pl"
+
+      if [[ $ENABLE_MINIPKG = 1 ]]; then
+         mkdir -p tmp-install
+         bbmake CONFIG_PREFIX="$PWD/tmp-install" install
+         minipkg_add "busybox" "$BUSYBOX_VERSION" tmp-install
+      fi
    popd
 
    indent_log -1

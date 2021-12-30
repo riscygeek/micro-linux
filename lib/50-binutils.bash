@@ -87,7 +87,12 @@ build_host_binutils() {
 
       log "Installing..."
       qcheck make DESTDIR="$SYSROOT" install
-      #install -m755 libctf/.libs/libctf.so.0.0.0 "$SYSROOT/usr/lib"
+
+      if [[ $ENABLE_MINIPKG = 1 ]]; then
+         mkdir -p tmp-install
+         qcheck make DESTDIR="$PWD/tmp-install" install
+         minipkg_add "binutils" "$BINUTILS_VERSION" tmp-install
+      fi
    popd
 
    indent_log -1

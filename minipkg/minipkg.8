@@ -1,0 +1,49 @@
+.TH minipkg 8 "1.0"
+
+.SH NAME
+minipkg - package manager for micro-linux
+
+.SH SYNOPSIS
+.SY minipkg
+<operation>
+[options]
+.YS
+
+.SH DESCRIPTION
+Minipkg is the source-based package manager for Micro-Linux.
+The package format was inspired by Arch Linux's PKGBUILD format.
+The command-line interface was inspired by Debian's apt package manager.
+
+.SH USAGE
+.B minipkg
+.I install
+<package(s)>
+.RE
+.RS 5
+Install a package.
+Minipkg automatically tracks down all the dependencies.
+.RE
+.B minipkg
+.I list
+[options]
+.RE
+.RS 5
+List all packages.
+
+.SH LIST OPTIONS
+.B --installed
+.RE
+.RS 5
+List only installed packages.
+.RE
+.B --installable
+.RE
+.RS 5
+List only packages that can be installed.
+
+.SH CONFIGURATION
+
+.SH SEE ALSO
+
+.SH COPYRIGHT
+At the moment I haven't decided on which license to use.

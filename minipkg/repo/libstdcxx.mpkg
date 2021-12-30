@@ -1,0 +1,34 @@
+pkgname=libstdcxx
+pkgver=11.1.0
+url="https://gcc.gnu.org"
+
+bdepends=()
+depends=()
+
+sources=(http://ftp.gnu.org/gnu/gcc/gcc-${pkgver}/gcc-${pkgver}.tar.gz)
+
+prepare() {
+   tar -xf "$S/gcc-${pkgver}.tar.gz"
+   cd "gcc-${pkgver}"
+}
+
+build() {
+   mkdir -vp build
+   cd build
+
+   ../libstdc++-v3/configure		\
+      CXXFLAGS='-g -O2 -D_GNU_SOURCE'	\
+      --prefix=/usr			\
+      --enable-silent-rules		\
+      --disable-nls			\
+      --disable-multilib		\
+      --disable-libstdcxx-pch		\
+      --host="$(gcc -dumpmachine)"	\
+      || exit 1
+
+   make
+}
+
+package() {
+   make DESTDIR="$D" install
+}
