@@ -8,9 +8,11 @@ print_help() {
    echo "Operations:"
    echo "  minipkg help"
    echo "  minipkg install <package(s)>"
+   echo "  minipkg build <package(s)>"
    echo "  minipkg remove <package(s)>"
    echo "  minipkg purge <package(s)>"
    echo "  minipkg list [options]"
+   echo "  minipkg info [options] <package>"
    echo "  minipkg clean-cache"
    echo
    echo "Written by Benjamin Stürz <benni@stuerz.xyz>"
