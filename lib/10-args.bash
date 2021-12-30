@@ -27,7 +27,6 @@ print_help() {
    echo "  --make-version=VERSION      Specify the make version [$MAKE_VERSION]."
    echo "  --libc-version=VERSION      Specify the libc version [musl: $MUSL_VERSION, glibc: $GLIBC_VERSION]."
    echo "  --bash-version=VERSION      Specify the bash version [$BASH_VERSION]."
-   echo "  --iana-etc-version=VERSION  Specify the iana-etc version [$IANA_ETC_VERSION]."
    echo "  --gmp-version=VERSION       Specify the gmp version [$GMP_VERSION]."
    echo "  --mpc-version=VERSION       Specify the mpc version [$MPC_VERSION]."
    echo "  --mpfr-version=VERSION      Specify the mpfr versin [$MPFR_VERSION]."
@@ -43,9 +42,7 @@ print_help() {
    echo "  --disable-native-toolchain  Don't build a native toolchain."
    echo "  --disable-kernel            Don't build a kernel."
    echo "  --disable-bash              Don't build the Bourne Again Shell."
-   echo "  --disable-iana-etc          Don't install the iana-etc package."
    echo "  --disable-minipkg           Don't install the minipkg package manager."
-   echo "  --enable-man-pages          Install the man-pages package."
    echo "  --disable-menuconfig        Don't show the menuconfig when building with defconfig."
    echo "  --enable-e2fs               Create an ext2 image."
    echo "  --enable-strip              Remove debug symbols in the rootfs."
@@ -206,18 +203,6 @@ parse_cmdline_args() {
          ;;
       --disable-e2fs)
          ENABLE_E2FS=0
-         ;;
-      --enable-iana-etc)
-         ENABLE_IANA_ETC=1
-         ;;
-      --disable-iana-etc)
-         ENABLE_IANA_ETC=0
-         ;;
-      --enable-man-pages)
-         ENABLE_MAN_PAGES=1
-         ;;
-      --disable-man-pages)
-         ENABLE_MAN_PAGES=0
          ;;
       --enable-strip)
          ENABLE_STRIP=1

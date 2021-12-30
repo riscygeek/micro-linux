@@ -9,8 +9,6 @@ MAKE_VERSION="4.3"
 GLIBC_VERSION="2.33"
 MUSL_VERSION="1.2.2"
 BASH_VERSION="5.1"
-IANA_ETC_VERSION="20211224"
-MAN_PAGES_VERSION="5.13"
 GMP_VERSION="6.2.1"
 MPC_VERSION="1.2.1"
 MPFR_VERSION="4.1.0"
@@ -21,8 +19,6 @@ ENABLE_KERNEL=1
 ENABLE_BASH=1
 ENABLE_MENUCONFIG=1
 ENABLE_E2FS=0
-ENABLE_IANA_ETC=1
-ENABLE_MAN_PAGES=0
 ENABLE_STRIP=0
 E2FS_SIZE=2G
 ENABLE_MINIPKG=1
@@ -72,8 +68,6 @@ download_binutils    "$BINUTILS_VERSION"
 download_gcc         "$GCC_VERSION"
 download_make        "$MAKE_VERSION"
 download_bash        "$BASH_VERSION"
-download_iana_etc    "$IANA_ETC_VERSION"
-download_man_pages   "$MAN_PAGES_VERSION"
 download_gmp         "$GMP_VERSION"
 download_mpc         "$MPC_VERSION"
 download_mpfr        "$MPFR_VERSION"
@@ -127,8 +121,6 @@ fi
 
 [[ $TARGET = $BUILD ]] || CROSS="${TARGET}-"
 
-[[ $ENABLE_MAN_PAGES = 1 ]] && build_host_man_pages
-
 if [[ $ENABLE_NATIVE_TOOLCHAIN = 1 ]]; then
    log "Creating a native toolchain..."
    indent_log +1
@@ -140,7 +132,6 @@ if [[ $ENABLE_NATIVE_TOOLCHAIN = 1 ]]; then
    indent_log -1
 fi
 
-[[ $ENABLE_IANA_ETC  = 1 ]] && build_host_iana_etc
 [[ $ENABLE_BASH      = 1 ]] && build_host_bash
 
 build_host_busybox

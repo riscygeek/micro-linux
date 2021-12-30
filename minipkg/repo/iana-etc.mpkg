@@ -1,0 +1,23 @@
+pkgname=iana-etc
+pkgver=20210611
+url="https://www.iana.org/protocols"
+description="/etc/protocols and /etc/services provided by IANA"
+
+bdepends=()
+depends=()
+
+sources=(https://github.com/Mic92/iana-etc/releases/download/${pkgver}/iana-etc-${pkgver}.tar.gz)
+
+prepare() {
+   tar -xf "${S}/iana-etc-${pkgver}.tar.gz"
+   cd "iana-etc-${pkgver}"
+}
+
+build() {
+   true
+}
+
+package() {
+   mkdir -p "$D/etc"
+   cp services protocols "$D/etc"
+}
