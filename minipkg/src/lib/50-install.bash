@@ -140,16 +140,19 @@ find_binpkg() {
 
 # Interactively install packages.
 # Args:
+#   $1 - `--just-build` (optional)
 #   $@ - packages
 install_packages_i() {
-   local -a pkgs binpkgs
+   local -a pkgs binpkgs just_build
    local pkg binpkg str pkgver
+
+   [[ $1 = --just-build ]] && just_build=1 && shift
 
    add_package() {
       local pkg force
       [[ $1 = -f ]] && force=1 && shift
       
-      [[ $force != 1 ]] && is_installed "$1" && return 0
+      [[ $force != 1 && $just_build != 1 ]] && is_installed "$1" && return 0
       for pkg in "${pkgs[@]}"; do
          [[ ${pkg} = $1 ]] && return 0
       done
@@ -182,9 +185,11 @@ install_packages_i() {
       popd
    }
 
-   for pkg in "$@"; do
-      is_installed "$pkg" && warn "Package $pkg is already installed."
-   done
+   if [[ $just_build != 1 ]]; then
+      for pkg in "$@"; do
+         is_installed "$pkg" && warn "Package $pkg is already installed."
+      done
+   fi
 
    log "Resolving dependencies..."
    log
@@ -199,15 +204,15 @@ install_packages_i() {
       pkg_get "$pkg" pkgver
       str+=" ${pkg}:${pkgver}"
    done
+
    log "$str"
-   log
-   yesno "Proceed with installation?" y || return 1
+   [[ $just_build != 1 ]] && { log; yesno "Proceed with installation?" y || return 1; }
 
    log
    log "Downloading packages..."
    for i in "${!pkgs[@]}"; do
       pkg="${pkgs[$i]}"
-      if find_binpkg "$pkg" binpkg; then
+      if [[ $just_build != 1 ]] && find_binpkg "$pkg" binpkg; then
          yesno "Found prebuilt binary package for ${pkg}:${pkgver}. Use it?" y \
             && unset pkgs["$i"]     \
             && binpkgs+=("$binpkg") \
@@ -228,14 +233,22 @@ install_packages_i() {
          log "($((i+1))/${#pkgs[@]}) Building $pkg:${pkgver}..."
          build_package "${pkg}" binpkg
          binpkgs+=("$binpkg")
+
+         [[ $just_build = 1 ]] && cp "$binpkg" "$PWD/"
       done
    fi
 
-   log
-   log "Installing packages..."
-   for i in "${!binpkgs[@]}"; do
-      binpkg="${binpkgs[$i]}"
-      log "($((i+1))/${#binpkgs[@]}) Installing ${binpkg}..."
-      install_package "$binpkg" "$ROOT"
-   done
+   if [[ $just_build != 1 ]]; then
+      log
+      log "Installing packages..."
+      for i in "${!binpkgs[@]}"; do
+         binpkg="${binpkgs[$i]}"
+         log "($((i+1))/${#binpkgs[@]}) Installing ${binpkg}..."
+         install_package "$binpkg" "$ROOT"
+      done
+   fi
+}
+
+build_packages_i() {
+   install_packages_i --just-build "$@"
 }

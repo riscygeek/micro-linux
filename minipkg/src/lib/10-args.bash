@@ -57,7 +57,7 @@ parse_cmdline_args() {
       print_help
       exit 0
       ;;
-   install|list|remove|purge|clean-cache)
+   install|list|remove|purge|clean-cache|build)
       OPERATION="$1"
       shift
       ;;
@@ -82,6 +82,10 @@ parse_cmdline_args() {
    purge)
       [[ $@ ]] || fail "Usage: minipkg purge <package(s)>"
       purge_packages_i "$@"
+      ;;
+   build)
+      [[ $@ ]] || fail "Usage: minipkg build <package(s)>"
+      build_packages_i "$@"
       ;;
    list)
       parse_list "$@"
