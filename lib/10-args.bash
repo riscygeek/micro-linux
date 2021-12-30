@@ -14,6 +14,8 @@ print_help() {
    echo "  --clean                     Delete the rootfs and build directories."
    echo "  --clean-all                 Delete all non-source files."
    echo "  --create-e2fs               Just create an ext2 image and exit."
+   echo "  --download-source=PRGORAM   Download the source code of a package"
+   echo "                              to build it on a system without netork access."
    echo
    echo "Configuration:"
    echo "  -v, --verbose               Don't suppress messages."
@@ -61,6 +63,7 @@ print_help() {
 }
 
 parse_cmdline_args() {
+   local tmp
    get_arg() {
       eval "$1='$(sed 's/^[^=]\+=//' <<< "$2")'"
    }
@@ -222,6 +225,10 @@ parse_cmdline_args() {
          ;;
       --e2fs-size=*)
          get_arg E2FS_SIZE "$1"
+         ;;
+      --download-source=*)
+         get_arg tmp "$1"
+         DOWNLOAD_SOURCES+=($tmp)
          ;;
       -*)
          fail "invalid option: $1"

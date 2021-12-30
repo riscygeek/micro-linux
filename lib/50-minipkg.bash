@@ -28,3 +28,9 @@ build_host_minipkg() {
       rm -rf tmp-install
    popd
 }
+
+minipkg_download_sources() {
+   [[ ${#DOWNLOAD_SOURCES[@]} = 0 ]] && return
+   log "Downloading package sources..."
+   qcheck "$TOP/src/minipkg" --root="$SYROOT" download-sources ${DOWNLOAD_SOURCES[@]}
+}

@@ -14,6 +14,7 @@ MPC_VERSION="1.2.1"
 MPFR_VERSION="4.1.0"
 MINIPKG_VERSION="$(./minipkg/src/minipkg --version)"
 
+DOWNLOAD_SOURCES=()
 ENABLE_NATIVE_TOOLCHAIN=1
 ENABLE_KERNEL=1
 ENABLE_BASH=1
@@ -51,7 +52,7 @@ HOST_ARCH="$(uname -m)"
 TARGET_ARCH="$(cut -d'-' -f1 <<< "${TARGET}")"
 set_bits "${TARGET_ARCH}"
 
-[[ $DO_BUILD = n ]] && exit 0
+[[ $DO_BUILD = n ]] && minipkg_download_sources && exit 0
 
 log "Build Information:"
 indent_log +1
@@ -143,6 +144,8 @@ build_host_busybox
 [[ $ENABLE_MINIPKG = 1 ]] && build_host_minipkg
 
 create_files
+
+minipkg_download_sources
 
 [[ $ENABLE_E2FS = 1 ]] && create_e2fs
 
