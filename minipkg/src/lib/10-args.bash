@@ -57,7 +57,7 @@ parse_cmdline_args() {
       print_help
       exit 0
       ;;
-   install|list|remove|purge|clean-cache|build)
+   install|list|remove|purge|clean-cache|build|info)
       OPERATION="$1"
       shift
       ;;
@@ -86,6 +86,10 @@ parse_cmdline_args() {
    build)
       [[ $@ ]] || fail "Usage: minipkg build <package(s)>"
       build_packages_i "$@"
+      ;;
+   info)
+      [[ $# -lt 1 ]] && fail "Usage: minipkg info <package>"
+      parse_package_info "$@"
       ;;
    list)
       parse_list "$@"
@@ -120,4 +124,27 @@ parse_list() {
          ;;
       esac
    fi
+}
+
+parse_package_info() {
+   local pkg where
+   while [[ $@ ]]; do
+      case "$1" in
+      --local)
+         where=local
+         ;;
+      --repo)
+         where=repo
+         ;;
+      -*)
+         fail "Unknown option: $1"
+         ;;
+      *)
+         [[ $pkg ]] && fail "Usage: minipkg info [options] <package>" || pkg="$1"
+         ;;
+      esac
+      shift
+   done
+   [[ $pkg ]] || fail "Usage: minipkg info [options] <package>"
+   package_info "$pkg" "$where"
 }
