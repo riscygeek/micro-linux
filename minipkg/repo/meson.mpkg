@@ -1,5 +1,5 @@
 pkgname=meson
-pkgver=0.59-1
+pkgver=0.59.1
 url="https://mesonbuild.com/"
 description="High productivity build system"
 

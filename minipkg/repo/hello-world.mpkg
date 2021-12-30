@@ -6,6 +6,9 @@ description="A small test package"
 bdepends=()
 depends=()
 
+provides=()
+conflicts=()
+
 sources=(http://github.com/riscygeek/hello-world/archive/refs/tags/v${pkgver}.tar.gz)
 
 prepare() {

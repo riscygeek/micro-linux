@@ -1,0 +1,28 @@
+pkgname=hello-depender
+pkgver=1.0
+url="https://github.com/riscygeek/hello-world"
+description="A small test package"
+
+bdepends=()
+depends=(hello-world)
+
+provides=()
+conflicts=()
+
+sources=()
+
+prepare() {
+   true
+}
+
+build() {
+   true
+}
+
+package() {
+   mkdir -p "$D/usr/bin"
+   echo '#!/bin/sh'                    >  "$D/usr/bin/hello-depender"
+   echo 'echo I just run hello-world.' >> "$D/usr/bin/hello-depender"
+   echo 'hello-world'                  >> "$D/usr/bin/hello-depender"
+   chmod +x                               "$D/usr/bin/hello-depender"
+}

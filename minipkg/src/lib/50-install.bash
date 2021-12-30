@@ -17,6 +17,11 @@ is_installed() {
    [[ -d $PKGDIR/$1 ]]
 }
 
+# Check if this package is provided by another package.
+is_foreign() {
+   [[ -L $PKGDIR/$1 ]]
+}
+
 # Load a package parameter from a file.
 # Args:
 #   $1 - pkgfile
@@ -98,12 +103,37 @@ build_package() {
    [[ ${#2} -ne 0 ]] && eval "${2}='${pb_binpkg}'"
 }
 
+# Args:
+#   $1 - package name
+#   $2 * outfile
+check_conflicts() {
+   local conflicts provides pkg ec pkgname
+   ec=0
+
+   pkg_get "$1" conflicts
+   pkg_get "$1" provides
+
+   for pkg in "${conflicts[@]}"; do
+      is_installed "$pkg" && eval "$2+=('$pkg')" && ec=1
+   done
+
+   #for pkg in "${provides[@]}"; do
+   #   if is_installed "$1"; then
+   #      pkg_get_local "$pkg" pkgname
+   #      [[ $pkgname = $1 ]] && continue
+   #      fail "$pkg is already provided by $pkg"
+   #   fi
+   #done
+
+   return "$ec"
+}
+
 # Install a binary package.
 # Args:
 #   $1 - bmpkg file
 #   $2 - root
 install_package() {
-   local pkgname pkgver pkgdir
+   local pkgname pkgver pkgdir provides pkg
 
    pkgname="$(tar -xf "$1" .meta/name -O)" || fail "Invalid package format"
    pkgver="$(tar -xf "$1" .meta/version -O)" || fail "Invalid package format"
@@ -121,6 +151,11 @@ install_package() {
    check tar -tf "$1" --exclude='.meta' | awk '{printf "/%s\n", $0}' > "$pkgdir/files"
    check tar -C "$2" -xf "$1" --exclude='.meta*'
    check tar -xf "$1" .meta/package.info -O > "$pkgdir/package.info"
+
+   pkg_get_from "$pkgdir/package.info" provides
+   for pkg in "${provides[@]}"; do
+      check ln -s "$pkgname" "$PKGDIR/$pkg"
+   done
 }
 
 # Find a binary package if available.
@@ -148,8 +183,8 @@ find_binpkg() {
 #     1: build a binpkg
 #     2: install the binpkg
 install_packages_i() {
-   local -a pkgs binpkgs
-   local pkg binpkg str pkgver
+   local -a pkgs binpkgs will_be_installed
+   local pkg binpkg str pkgver pkg_conflicts other remove provides subpkg
 
    [[ -z $depth ]] && depth=2
 
@@ -192,7 +227,24 @@ install_packages_i() {
 
    if [[ $depth -ge 2 ]]; then
       for pkg in "$@"; do
-         is_installed "$pkg" && warn "Package $pkg is already installed."
+         if is_installed "$pkg"; then
+            if is_foreign "$pkg"; then
+               pkg_get_local "$pkg" pkgname
+               warn "Package $pkg is already provided by $pkgname. $pkgname will be uninstalled."
+               remove+=("$pkgname")
+            else
+               warn "Package $pkg is already installed."
+            fi
+         fi
+         pkg_get "${pkg}" provides
+         for subpkg in "${provides[@]}"; do
+            if is_installed "$subpkg"; then
+               pkg_get_local "$subpkg" pkgname
+               [[ $pkgname = $pkg ]] && continue
+               warn "Package $subpkg is already provided by $pkgname. $pkgname will be uninstalled."
+               remove+=("$subpkg")
+            fi
+         done
       done
    fi
 
@@ -203,6 +255,23 @@ install_packages_i() {
       find_dependencies "${pkg}"
       add_package -f "${pkg}"
    done
+
+   # Check for package conflicts.
+   if [[ $depth -ge 2 ]]; then
+      for pkg in "${pkgs[@]}"; do
+         if ! check_conflicts "$pkg" pkg_conflicts; then
+            for other in "${pkg_conflicts[@]}"; do
+               if contains "$other" "${pkgs[@]}"; then
+                  fail "$pkg conflicts with $other"
+               else
+                  warn "$pkg conflicts with $other. $other will be uninstalled."
+                  remove+=("$other")
+               fi
+            done
+         fi
+      done
+      [[ ${#remove[@]} -ne 0 ]] && log
+   fi
 
    str="Packages (${#pkgs[@]})"
    for pkg in "${pkgs[@]}"; do
@@ -245,6 +314,14 @@ install_packages_i() {
       fi
 
       if [[ $depth -ge 2 ]]; then
+         if [[ ${#remove[@]} -ne 0 ]]; then
+            log
+            log "Removing conflicting packages..."
+            for pkg in "${remove[@]}"; do
+               will_be_installed=("${pkgs[@]}" "${remove[@]}")
+               remove_packages_i "$pkg"
+            done
+         fi
          log
          log "Installing packages..."
          for i in "${!binpkgs[@]}"; do

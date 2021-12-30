@@ -1,0 +1,27 @@
+pkgname=useless-package
+pkgver=1.0
+url="https://github.com/riscygeek/hello-world"
+description="A small test package"
+
+bdepends=()
+depends=()
+
+provides=(hello-world)
+conflicts=()
+
+sources=()
+
+prepare() {
+   true
+}
+
+build() {
+   true
+}
+
+package() {
+   mkdir -p "$D/usr/bin"
+   echo '#!/bin/sh'                 >  "$D/usr/bin/hello-world"
+   echo 'echo Hello useless World.' >> "$D/usr/bin/hello-world"
+   chmod +x                            "$D/usr/bin/hello-world"
+}

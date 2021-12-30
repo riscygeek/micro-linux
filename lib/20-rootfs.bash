@@ -70,7 +70,9 @@ create_files() {
       replace_version linux-headers "$KERNEL_VERSION"
       replace_version make          "$MAKE_VERSION"
       replace_version minipkg       "$MINIPKG_VERSION"
-      replace_version $LIBC_NAME    "$LIBC_VERSION"
+      replace_version "$LIBC_NAME"  "$LIBC_VERSION"
+
+      ln -sf "$LIBC_NAME" "$SYSROOT/var/db/minipkg/packages/libc"
    fi
 }
 

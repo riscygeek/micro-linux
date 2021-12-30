@@ -4,3 +4,5 @@ url="http://musl-libc.org"
 description="musl C library"
 
 depends=()
+
+provides=(libc)

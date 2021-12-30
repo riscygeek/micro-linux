@@ -32,5 +32,5 @@ build_host_minipkg() {
 minipkg_download_sources() {
    [[ ${#DOWNLOAD_SOURCES[@]} = 0 ]] && return
    log "Downloading package sources..."
-   qcheck "$TOP/src/minipkg" --root="$SYROOT" download-sources ${DOWNLOAD_SOURCES[@]}
+   qcheck "$TOP/minipkg/src/minipkg" --root="$SYSROOT" download-source ${DOWNLOAD_SOURCES[@]}
 }

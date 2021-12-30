@@ -3,12 +3,12 @@
 list_installed() {
    local dir pkgname pkgver description
    pushd "$PKGDIR"
-      for dir in *; do
-         dir="$PKGDIR/$dir"
+      for name in *; do
+         dir="$PKGDIR/$name"
          [[ -f $dir/package.info ]] || continue
          pkg_get_from "$dir/package.info" pkgname
          pkg_get_from "$dir/package.info" pkgver
-         echo "$pkgname $pkgver"
+         [[ -L $dir ]] && echo "$name $pkgver (provided by $pkgname)" || echo "$pkgname $pkgver"
       done
    popd
 }

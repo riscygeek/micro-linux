@@ -5,3 +5,4 @@ description="The GNU Compiler Collection - stage 1"
 
 depends=(binutils)
 
+provides=(gcc)

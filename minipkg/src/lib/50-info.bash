@@ -5,7 +5,7 @@
 #   $1 - package name
 #   $2 - local or repo
 package_info() {
-   local pkgfile pkgname pkgver description url bdepends depends
+   local pkgfile pkgname pkgver description url bdepends depends conflicts provides
    if [[ $2 = local ]]; then
       is_installed "$1" || fail "No such package: $1"
       pkgfile="$PKGDIR/$1/package.info"
@@ -28,9 +28,13 @@ package_info() {
    pkg_get_from "$pkgfile" url
    pkg_get_from "$pkgfile" bdepends
    pkg_get_from "$pkgfile" depends
+   pkg_get_from "$pkgfile" conflicts
+   pkg_get_from "$pkgfile" provides
 
-   [[ -z $bdepends ]] && bdepends="None"
-   [[ -z $depends ]]  &&  depends="None"
+   [[ -z $bdepends   ]] && bdepends="None"
+   [[ -z $depends    ]] && depends="None"
+   [[ -z $conflicts  ]] && conflicts="None"
+   [[ -z $provides   ]] && provides="None"
 
    print_line "Name"                   "$pkgname"
    print_line "Version"                "$pkgver"
@@ -38,4 +42,6 @@ package_info() {
    print_line "URL"                    "$url"
    print_line "Build Dependencies"     "${bdepends[@]}"
    print_line "Runtime Dependencies"   "${depends[@]}"
+   print_line "Conflicts with"         "${conflicts[@]}"
+   print_line "Provides"               "${provides[@]}"
 }
