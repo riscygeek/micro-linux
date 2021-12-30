@@ -1,0 +1,30 @@
+pkgname=python3
+pkgver=3.9.6
+url="https://www.python.org/"
+description="Next generation of the python high-level scripting"
+
+bdepends=()
+depends=(bzip2 expat gdbm libffi openssl)
+
+sources=(https://www.python.org/ftp/python/${pkgver}/Python-${pkgver}.tar.xz)
+
+prepare() {
+   tar -xf "${S}/Python-${pkgver}.tar.xz"
+   cd "Python-${pkgver}"
+}
+
+build() {
+   ./configure             \
+      --prefix=/usr        \
+      --enable-shared      \
+      --with-system-expat  \
+      --with-system-ffi    \
+      --with-ensurepip=yes \
+      --enable-optimizations
+
+   make
+}
+
+package() {
+   make DESTDIR="$D" install
+}

@@ -1,0 +1,23 @@
+pkgname=ninja
+pkgver=1.10.2
+url="https://ninja-build.org/"
+description="Small build system with a focus on speed"
+
+bdepends=(python3)
+depends=()
+
+sources=(https://github.com/ninja-build/ninja/archive/v${pkgver}/ninja-${pkgver}.tar.gz)
+
+prepare() {
+   tar -xf "${S}/ninja-${pkgver}.tar.gz"
+   cd "ninja-${pkgver}"
+}
+
+build() {
+   python3 configure.py --bootstrap
+}
+
+package() {
+   install -vDm755 ninja "$D/usr/bin/ninja"
+   install -vDm644 misc/bash-completion "$D/usr/share/bash-completion/completions/ninja"
+}

@@ -1,0 +1,27 @@
+pkgname=make-ca
+pkgver=1.7
+url="https://github.com/djlucas/make-ca"
+description="PKI setup script for LFS (and others)"
+
+bdepends=()
+depends=(p11-kit)
+
+sources=(http://github.com/djlucas/make-ca/releases/download/v${pkgver}/make-ca-${pkgver}.tar.xz)
+
+prepare() {
+   tar -xf "${S}/make-ca-${pkgver}.tar.xz"
+   cd "make-ca-${pkgver}"
+}
+
+build() {
+   true
+}
+
+package() {
+   make DESTDIR="$D" install     || exit 1
+   install -dm755 /etc/ssl/local || exit 1
+}
+
+post_install() {
+   /usr/sbin/make-ca -g
+}

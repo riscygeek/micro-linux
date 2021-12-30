@@ -1,0 +1,23 @@
+pkgname=libtasn1
+pkgver=4.17.0
+url="https://www.gnu.org/software/libtasn1"
+description="The ASN.1 library used in GNUTLS"
+
+bdepends=()
+depends=()
+
+sources=(http://ftp.gnu.org/gnu/libtasn1/libtasn1-${pkgver}.tar.gz)
+
+prepare() {
+   tar -xf "${S}/libtasn1-${pkgver}.tar.gz"
+   cd "libtasn1-${pkgver}"
+}
+
+build() {
+   ./configure --prefix=/usr
+   make
+}
+
+package() {
+   make DESTDIR="$D" install
+}

@@ -1,0 +1,23 @@
+pkgname=expat
+pkgver=2.4.1
+url="https://libexpat.github.io/"
+description="An XML parser library"
+
+bdepends=()
+depends=()
+
+sources=(https://prdownloads.sourceforge.net/expat/expat-${pkgver}.tar.xz)
+
+prepare() {
+   tar -xf "${S}/expat-${pkgver}.tar.xz"
+   cd "expat-${pkgver}"
+}
+
+build() {
+   ./configure --prefix=/usr
+   make
+}
+
+package() {
+   make DESTDIR="$D" install
+}

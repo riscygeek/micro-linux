@@ -1,0 +1,38 @@
+pkgname=p11-kit
+pkgver=0.24.0
+url="https://github.com/p11-glue/p11-kit"
+description="Enumerate PKCS #11 (a Cryptographic Token Interface Standard) modules"
+
+bdepends=(meson ninja)
+depends=(libtasn1)
+
+sources=(https://github.com/p11-glue/p11-kit/releases/download/${pkgver}/p11-kit-${pkgver}.tar.xz)
+
+prepare() {
+   tar -xf "${S}/p11-kit-${pkgver}.tar.xz"
+   cd "p11-kit-${pkgver}"
+
+   sed '20,$ d' -i trust/trust-extract-compat &&
+   cat >> trust/trust-extract-compat << "EOF"
+# Copy existing anchor modifications to /etc/ssl/local
+/usr/libexec/make-ca/copy-trust-modifications
+
+# Generate a new trust store
+/usr/sbin/make-ca -f -g
+EOF
+}
+
+build() {
+   mkdir build
+   cd build
+
+   meson --prefix=/usr --buildtype=release \
+      -Dtrust_paths=/etc/pki/anchors
+
+   ninja
+}
+
+package() {
+   ninja DESTDIR="$D" install
+   ln -sf /usr/libexec/p11-kit/trust-extract-compat "$D/usr/bin/update-ca-certificated"
+}
