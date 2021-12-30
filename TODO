@@ -2,6 +2,6 @@
 - More modular --enable-... and package management.
 
 # Minipkg
-- Operations: search, info
+- Operations: search, info, build
 - Optimizations!
-- Caching binpkgs in /var/cache/minipkg/binpkgs
+- Handling updates (eg. re-installs).

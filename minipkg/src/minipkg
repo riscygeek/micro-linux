@@ -9,6 +9,7 @@ REPODIR="$(realpath "$(dirname "$0")/../repo")"
 
 PKGDIR="$ROOT/var/db/minipkg/packages"
 BUILDDIR="$ROOT/var/tmp/minipkg"
+BINPKGSDIR="$ROOT/var/cache/minipkg/binpkgs"
 
 for f in $(find "${LIBDIR}/" -type f); do
    source "$f" || exit 1

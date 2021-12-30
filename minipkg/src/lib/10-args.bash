@@ -57,7 +57,7 @@ parse_cmdline_args() {
       print_help
       exit 0
       ;;
-   install|list|remove|purge)
+   install|list|remove|purge|clean-cache)
       OPERATION="$1"
       shift
       ;;
@@ -87,7 +87,7 @@ parse_cmdline_args() {
       parse_list "$@"
       ;;
    clean-cache)
-      rm -rf "$BUILDDIR"
+      rm -rf "$BUILDDIR" "$BINPKGSDIR"
       ;;
    *)
       fail "Unimplemented operation '${OPERATION}'"

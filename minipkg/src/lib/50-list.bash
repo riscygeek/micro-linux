@@ -20,9 +20,9 @@ list_available() {
          pkgfile="$REPODIR/$pkg"
          pkg_get_from "$pkgfile" pkgname
          pkg_get_from "$pkgfile" pkgver
-         if is_installed "$pkg"; then
+         if is_installed "$pkgname"; then
             tmp="$pkgver"
-            pkg_get_local "$pkg" pkgver
+            pkg_get_local "$pkgname" pkgver
             echo "$pkgname $tmp [installed: $pkgver]"
          else
             echo "$pkgname $pkgver"

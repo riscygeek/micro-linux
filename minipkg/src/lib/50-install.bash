@@ -92,6 +92,9 @@ build_package() {
       tar -czf "${pb_binpkg}" $(ls) .meta
    popd
 
+   mkdir -p "$BINPKGSDIR"
+   check install -Dm644 "$pb_binpkg" "$BINPKGSDIR/"
+
    [[ ${#2} -ne 0 ]] && eval "${2}='${pb_binpkg}'"
 }
 
@@ -106,8 +109,8 @@ install_package() {
    pkgver="$(tar -xf "$1" .meta/version -O)" || fail "Invalid package format"
 
    if is_installed "${pkgname}"; then
-      warn "Package ${pkgname} is already installed as version ${pkgver}!"
-      # TODO: remove old
+      #warn "Package ${pkgname} is already installed as version ${pkgver}!"
+      purge_package "${pkgname}"
       true
    fi
 
@@ -118,6 +121,20 @@ install_package() {
    check tar -tf "$1" --exclude='.meta' | awk '{printf "/%s\n", $0}' > "$pkgdir/files"
    check tar -C "$2" -xf "$1" --exclude='.meta*'
    check tar -xf "$1" .meta/package.info -O > "$pkgdir/package.info"
+}
+
+# Find a binary package if available.
+# Args:
+#   $1 - package name
+#   $2 * binpkg
+find_binpkg() {
+   local tmp
+   [[ -d $BINPKGSDIR ]] || return 1
+   tmp="$(ls "$BINPKGSDIR" | grep "^$1:[^:]\+\.bmpkg\.tar\.gz\$" | sort -nr | head -n1)"
+   [[ $tmp ]] || return 1
+   tmp="$BINPKGSDIR/$tmp"
+   [[ ${#2} -ne 0 ]] && eval "$2='$tmp'" || echo "$tmp"
+   return 0
 }
 
 
@@ -165,6 +182,10 @@ install_packages_i() {
       popd
    }
 
+   for pkg in "$@"; do
+      is_installed "$pkg" && warn "Package $pkg is already installed."
+   done
+
    log "Resolving dependencies..."
    log
 
@@ -184,29 +205,37 @@ install_packages_i() {
 
    log
    log "Downloading packages..."
-   for (( i=0; i < ${#pkgs[@]}; i++ )); do
+   for i in "${!pkgs[@]}"; do
       pkg="${pkgs[$i]}"
+      if find_binpkg "$pkg" binpkg; then
+         yesno "Found prebuilt binary package for ${pkg}:${pkgver}. Use it?" y \
+            && unset pkgs["$i"]     \
+            && binpkgs+=("$binpkg") \
+            && continue
+      fi
       pkg_get "$pkg" pkgver
-      log "($((i+1))/${#pkgs[@]}) Downloading $pkg:${pkgver}..."
+      log "($((i+1))/${#pkgs[@]}) Downloading ${pkg}:${pkgver}..."
       download_sources "${pkg}"
    done
 
-   log
-   log "Building packages..."
-   for (( i=0; i < ${#pkgs[@]}; i++ )); do
-      pkg="${pkgs[$i]}"
-      pkg_get "$pkg" pkgver
-      log "($((i+1))/${#pkgs[@]}) Building $pkg:${pkgver}..."
-      build_package "${pkg}" binpkg
-      binpkgs+=("$binpkg")
-   done
+
+   if [[ ${#pkgs[@]} -ne 0 ]]; then
+      log
+      log "Building packages..."
+      for i in "${!pkgs[@]}"; do
+         pkg="${pkgs[$i]}"
+         pkg_get "$pkg" pkgver
+         log "($((i+1))/${#pkgs[@]}) Building $pkg:${pkgver}..."
+         build_package "${pkg}" binpkg
+         binpkgs+=("$binpkg")
+      done
+   fi
 
    log
    log "Installing packages..."
-   for (( i=0; i < ${#pkgs[@]}; i++ )); do
-      pkg="${pkgs[$i]}"
-      pkg_get "$pkg" pkgver
-      log "($((i+1))/${#pkgs[@]}) Installing $pkg:${pkgver}..."
+   for i in "${!binpkgs[@]}"; do
+      binpkg="${binpkgs[$i]}"
+      log "($((i+1))/${#binpkgs[@]}) Installing ${binpkg}..."
       install_package "$binpkg" "$ROOT"
    done
 }
