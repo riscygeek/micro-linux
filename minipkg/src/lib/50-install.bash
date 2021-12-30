@@ -142,17 +142,22 @@ find_binpkg() {
 # Args:
 #   $1 - `--just-build` (optional)
 #   $@ - packages
+# Variables:
+#   depth:
+#     0: download the source code
+#     1: build a binpkg
+#     2: install the binpkg
 install_packages_i() {
-   local -a pkgs binpkgs just_build
+   local -a pkgs binpkgs
    local pkg binpkg str pkgver
 
-   [[ $1 = --just-build ]] && just_build=1 && shift
+   [[ -z $depth ]] && depth=2
 
    add_package() {
       local pkg force
       [[ $1 = -f ]] && force=1 && shift
       
-      [[ $force != 1 && $just_build != 1 ]] && is_installed "$1" && return 0
+      [[ $force != 1 && $depth -ge 2 ]] && is_installed "$1" && return 0
       for pkg in "${pkgs[@]}"; do
          [[ ${pkg} = $1 ]] && return 0
       done
@@ -185,7 +190,7 @@ install_packages_i() {
       popd
    }
 
-   if [[ $just_build != 1 ]]; then
+   if [[ $depth -ge 2 ]]; then
       for pkg in "$@"; do
          is_installed "$pkg" && warn "Package $pkg is already installed."
       done
@@ -206,13 +211,13 @@ install_packages_i() {
    done
 
    log "$str"
-   [[ $just_build != 1 ]] && { log; yesno "Proceed with installation?" y || return 1; }
+   [[ $depth -ge 2 ]] && { log; yesno "Proceed with installation?" y || return 1; }
 
    log
    log "Downloading packages..."
    for i in "${!pkgs[@]}"; do
       pkg="${pkgs[$i]}"
-      if [[ $just_build != 1 ]] && find_binpkg "$pkg" binpkg; then
+      if [[ $depth -ge 2 ]] && find_binpkg "$pkg" binpkg; then
          yesno "Found prebuilt binary package for ${pkg}:${pkgver}. Use it?" y \
             && unset pkgs["$i"]     \
             && binpkgs+=("$binpkg") \
@@ -224,31 +229,36 @@ install_packages_i() {
    done
 
 
-   if [[ ${#pkgs[@]} -ne 0 ]]; then
-      log
-      log "Building packages..."
-      for i in "${!pkgs[@]}"; do
-         pkg="${pkgs[$i]}"
-         pkg_get "$pkg" pkgver
-         log "($((i+1))/${#pkgs[@]}) Building $pkg:${pkgver}..."
-         build_package "${pkg}" binpkg
-         binpkgs+=("$binpkg")
+   if [[ $depth -ge 1 ]]; then
+      if [[ ${#pkgs[@]} -ne 0 ]]; then
+         log
+         log "Building packages..."
+         for i in "${!pkgs[@]}"; do
+            pkg="${pkgs[$i]}"
+            pkg_get "$pkg" pkgver
+            log "($((i+1))/${#pkgs[@]}) Building $pkg:${pkgver}..."
+            build_package "${pkg}" binpkg
+            binpkgs+=("$binpkg")
 
-         [[ $just_build = 1 ]] && cp "$binpkg" "$PWD/"
-      done
-   fi
+            [[ $depth -lt 2 ]] && cp "$binpkg" "$PWD/"
+         done
+      fi
 
-   if [[ $just_build != 1 ]]; then
-      log
-      log "Installing packages..."
-      for i in "${!binpkgs[@]}"; do
-         binpkg="${binpkgs[$i]}"
-         log "($((i+1))/${#binpkgs[@]}) Installing ${binpkg}..."
-         install_package "$binpkg" "$ROOT"
-      done
+      if [[ $depth -ge 2 ]]; then
+         log
+         log "Installing packages..."
+         for i in "${!binpkgs[@]}"; do
+            binpkg="${binpkgs[$i]}"
+            log "($((i+1))/${#binpkgs[@]}) Installing ${binpkg}..."
+            install_package "$binpkg" "$ROOT"
+         done
+      fi
    fi
 }
 
 build_packages_i() {
-   install_packages_i --just-build "$@"
+   depth=1 install_packages_i "$@"
+}
+download_source_i() {
+   depth=0 install_packages_i "$@"
 }

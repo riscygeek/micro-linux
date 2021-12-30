@@ -7,9 +7,14 @@ ROOT="$(realpath "$(dirname "$0")/../tmp")"
 LIBDIR="$(realpath "$(dirname "$0")/lib")"
 REPODIR="$(realpath "$(dirname "$0")/../repo")"
 
-PKGDIR="$ROOT/var/db/minipkg/packages"
-BUILDDIR="$ROOT/var/tmp/minipkg"
-BINPKGSDIR="$ROOT/var/cache/minipkg/binpkgs"
+
+set_root() {
+   PKGDIR="$ROOT/var/db/minipkg/packages"
+   BUILDDIR="$ROOT/var/tmp/minipkg"
+   BINPKGSDIR="$ROOT/var/cache/minipkg/binpkgs"
+}
+
+set_root
 
 for f in $(find "${LIBDIR}/" -type f); do
    source "$f" || exit 1

@@ -13,6 +13,7 @@ print_help() {
    echo "  minipkg purge <package(s)>"
    echo "  minipkg list [options]"
    echo "  minipkg info [options] <package>"
+   echo "  minipkg download-source <package(s)>"
    echo "  minipkg clean-cache"
    echo
    echo "Written by Benjamin Stürz <benni@stuerz.xyz>"
@@ -41,7 +42,8 @@ parse_cmdline_args() {
          exit 0
          ;;
       --root=*)
-         get_arg "$1" ROOT
+         get_arg ROOT "$1"
+         set_root
          shift
          ;;
       -*)
@@ -59,7 +61,7 @@ parse_cmdline_args() {
       print_help
       exit 0
       ;;
-   install|list|remove|purge|clean-cache|build|info)
+   install|list|remove|purge|clean-cache|build|info|download-source)
       OPERATION="$1"
       shift
       ;;
@@ -88,6 +90,10 @@ parse_cmdline_args() {
    build)
       [[ $@ ]] || fail "Usage: minipkg build <package(s)>"
       build_packages_i "$@"
+      ;;
+   download-source)
+      [[ $@ ]] || fail "Usage: minipkg download-source <package(s)>"
+      download_source_i "$@"
       ;;
    info)
       [[ $# -lt 1 ]] && fail "Usage: minipkg info <package>"

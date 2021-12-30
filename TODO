@@ -2,6 +2,6 @@
 - More modular --enable-... and package management.
 
 # Minipkg
-- Operations: search, download-source
+- Operations: search
 - Optimizations!
 - Handling updates (eg. re-installs).
