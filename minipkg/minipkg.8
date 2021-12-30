@@ -20,8 +20,22 @@ The command-line interface was inspired by Debian's apt package manager.
 <package(s)>
 .RE
 .RS 5
-Install a package.
+Install packages.
 Minipkg automatically tracks down all the dependencies.
+.RE
+.B minipkg
+.I remove
+<package(s)>
+.RE
+.RS 5
+Remove packages.
+.RE
+.B minipkg
+.I purge
+<package(s)>
+.RE
+.RS 5
+Remove packages without checking for the dependencies and reverse-dependencies.
 .RE
 .B minipkg
 .I list

@@ -1,6 +1,7 @@
 pkgname=hello-world
 pkgver=1.0
 url="https://github.com/riscygeek/hello-world"
+description="A small test package"
 
 bdepends=()
 depends=()

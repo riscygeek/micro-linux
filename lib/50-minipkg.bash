@@ -13,7 +13,7 @@ minipkg_add() {
    mkdir -p "$dir"
 
    pushd "$3"
-      find \! -type d | sed 's@./@/@' > "$dir/files"
+      find | sed 's@./@/@' > "$dir/files"
    popd
 }
 

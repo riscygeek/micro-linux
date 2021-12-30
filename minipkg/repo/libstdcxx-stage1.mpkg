@@ -1,6 +1,7 @@
-pkgname=libstdcxx
+pkgname=libstdcxx-stage1
 pkgver=11.1.0
 url="https://gcc.gnu.org"
+description="The C++ library for the gcc-stage1 package"
 
 bdepends=()
 depends=()

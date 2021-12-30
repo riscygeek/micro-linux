@@ -2,7 +2,7 @@
 
 # Find a package file.
 # Args:
-#   $1 - name
+#   $1 - package name
 #   $2 * outvar
 find_package() {
    local file
@@ -11,22 +11,38 @@ find_package() {
    [[ ${#2} -ne 0 ]] && eval "$2='${file}'" || echo "${file}"
 }
 
+
 # Check if a package is already installed.
 is_installed() {
-   [[ -d $PKGDIR ]] || return 1
-   ls "$PKGDIR" | grep -q "^$1:.*$"
+   [[ -d $PKGDIR/$1 ]]
+}
+
+# Load a package parameter from a file.
+# Args:
+#   $1 - pkgfile
+#   $2 - parameter name
+pkg_get_from() {
+   eval "$(grep -m1 "^$2=.*" "$1")"
 }
 
 # Load a package parameter (eg. version).
 # Args:
 #   $1 - package name
 #   $2 - parameter name
-#   $3 - (optional) pkgfile
 pkg_get() {
-   local pg_file pg_param
-   [[ $3 ]] && pg_file="$3" || find_package "$1" pg_file
-   pg_param="$(grep -m1 "^$2=.*" "${pg_file}")"
-   eval "${pg_param}"
+   local pg_file
+   find_package "$1" pg_file
+   pkg_get_from "$pg_file" "$2"
+}
+
+# Load a package parameter from the local package.
+# Args:
+#   $1 - package name
+#   $2 - parameter name
+pkg_get_local() {
+   local pg_file
+   is_installed "$1" || fail "Package $1 is not installed"
+   pkg_get_from "$PKGDIR/$1/package.info" "$2"
 }
 
 # Build a binary package.
@@ -70,9 +86,9 @@ build_package() {
    # Create a binary package.
    pushd "${pkgdir}"
       mkdir .meta
-      echo "$1"         >  .meta/name
-      echo "${pkgver}"  >  .meta/version
-      cp "${pkgfile}"      .meta/package.mpkg
+      echo "$1"         > .meta/name
+      echo "${pkgver}"  > .meta/version
+      check cp "${pkgfile}" .meta/package.info
       tar -czf "${pb_binpkg}" $(ls) .meta
    popd
 
@@ -84,7 +100,7 @@ build_package() {
 #   $1 - bmpkg file
 #   $2 - root
 install_package() {
-   local pkgname pkgver
+   local pkgname pkgver pkgdir
 
    pkgname="$(tar -xf "$1" .meta/name -O)" || fail "Invalid package format"
    pkgver="$(tar -xf "$1" .meta/version -O)" || fail "Invalid package format"
@@ -96,15 +112,19 @@ install_package() {
    fi
 
    log "Installing ${pkgname}:${pkgver}..."
-   check mkdir -p "$PKGDIR/${pkgname}:${pkgver}"
+   pkgdir="$PKGDIR/${pkgname}"
+   check mkdir -p "$pkgdir"
    check mkdir -p "$ROOT"
-   check tar -tf "$1" --exclude='.meta' | awk '{printf "/%s\n", $0}' > "$PKGDIR/${pkgname}:${pkgver}/files"
+   check tar -tf "$1" --exclude='.meta' | awk '{printf "/%s\n", $0}' > "$pkgdir/files"
    check tar -C "$2" -xf "$1" --exclude='.meta*'
+   check tar -xf "$1" .meta/package.info -O > "$pkgdir/package.info"
 }
 
+
+# Interactively install packages.
 # Args:
 #   $@ - packages
-install_packages() {
+install_packages_i() {
    local -a pkgs binpkgs pkgvers
    local pkg binpkg str pkgver
 
@@ -161,13 +181,13 @@ install_packages() {
    done
    log "$str"
    log
-   yesno "Proceed with installation?" y
+   yesno "Proceed with installation?" y || return 1
 
    log
    log "Downloading packages..."
    for (( i=0; i < ${#pkgs[@]}; i++ )); do
       pkg="${pkgs[$i]}"
-      log "($i/${#pkgs[@]}) Downloading $pkg:${pkgvers[$pkg]}..."
+      log "($((i+1))/${#pkgs[@]}) Downloading $pkg:${pkgvers[$pkg]}..."
       download_sources "${pkg}"
    done
 
@@ -175,7 +195,7 @@ install_packages() {
    log "Building packages..."
    for (( i=0; i < ${#pkgs[@]}; i++ )); do
       pkg="${pkgs[$i]}"
-      log "($i/${#pkgs[@]}) Building $pkg:${pkgvers[$pkg]}..."
+      log "($((i+1))/${#pkgs[@]}) Building $pkg:${pkgvers[$pkg]}..."
       build_package "${pkg}" binpkg
       binpkgs+=("$binpkg")
    done

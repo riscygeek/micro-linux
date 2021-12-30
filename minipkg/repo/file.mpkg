@@ -1,6 +1,7 @@
 pkgname=file
 pkgver=5.41
 url="http://www.darwinsys.com/file"
+description="File type identification utility"
 
 bdepends=()
 depends=()
