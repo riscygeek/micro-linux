@@ -23,7 +23,7 @@ build_host_minipkg() {
       qcheck ./install.sh "$SYSROOT"
 
       mkdir -p tmp-install
-      qcheck ./install.sh "$PWD/tmp-install"
+      qcheck ./install.sh --no-repo "$PWD/tmp-install"
       minipkg_add "minipkg" "$MINIPKG_VERSION" tmp-install
       rm -rf tmp-install
    popd

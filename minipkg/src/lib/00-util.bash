@@ -97,3 +97,16 @@ download() {
       wget "$flags" -O "$dest" "$1" || { rm -f "$dest"; fail "Failed to download '$1'"; }
    fi
 }
+
+# Args:
+# $1  - value
+# $@  - list
+contains() {
+   local value e
+   value="$1"
+   shift
+   for e in "$@"; do
+      [[ $e = $value ]] && return 0
+   done
+   return 1
+}

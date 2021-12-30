@@ -11,6 +11,7 @@ print_help() {
    echo "  minipkg remove <package(s)>"
    echo "  minipkg purge <package(s)>"
    echo "  minipkg list [options]"
+   echo "  minipkg clean-cache"
    echo
    echo "Written by Benjamin Stürz <benni@stuerz.xyz>"
 }
@@ -84,6 +85,9 @@ parse_cmdline_args() {
       ;;
    list)
       parse_list "$@"
+      ;;
+   clean-cache)
+      rm -rf "$BUILDDIR"
       ;;
    *)
       fail "Unimplemented operation '${OPERATION}'"

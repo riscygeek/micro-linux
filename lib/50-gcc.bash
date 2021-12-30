@@ -219,7 +219,7 @@ build_host_gcc() {
       if [[ $ENABLE_MINIPKG = 1 ]]; then
          mkdir -p tmp-install
          qcheck make DESTDIR="$PWD/tmp-install" install
-         minipkg_add "gcc" "$GCC_VERSION-stage1" tmp-install
+         minipkg_add "gcc-stage1" "$GCC_VERSION-stage1" tmp-install
       else
          check cp "$GCC_TAR" "$SYSROOT/usr/src/"
       fi

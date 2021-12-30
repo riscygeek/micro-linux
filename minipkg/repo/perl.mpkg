@@ -1,0 +1,41 @@
+pkgname=perl
+pkgver=5.34.0
+url="https://perl.org"
+description="A highly capable, feature-rich programming language"
+
+bdepends=(zlib)
+depends=(gdbm)
+
+sources=(https://www.cpan.org/src/5.0/perl-5.34.0.tar.xz https://www.linuxfromscratch.org/patches/lfs/11.0/perl-5.34.0-upstream_fixes-1.patch)
+
+export BUILD_ZLIB=False
+export BUILD_BZIP2=1
+
+prepare() {
+   tar -xf "${S}/perl-${pkgver}.tar.xz"
+   cd "perl-${pkgver}"
+   patch -Np1 -i ../perl-5.34.0-upstream_fixes-1.patch
+}
+
+build() {
+   sh Configure -des                               \
+      -Dprefix=/usr                                \
+      -Dvendorprefix=/usr                          \
+      -Dprivlib=/usr/lib/perl5/5.34/core_perl      \
+      -Darchlib=/usr/lib/perl5/5.34/core_perl      \
+      -Dsitelib=/usr/lib/perl5/5.34/site_perl      \
+      -Dsitearch=/usr/lib/perl5/5.34/site_perl     \
+      -Dvendorlib=/usr/lib/perl5/5.34/vendor_perl  \
+      -Dvendorarch=/usr/lib/perl5/5.34/vendor_perl \
+      -Dman1dir=/usr/share/man/man1                \
+      -Dman3dir=/usr/share/man/man3                \
+      -Dpager="/usr/bin/less -isR"                 \
+      -Duseshrplib                                 \
+      -Dusethreads
+
+   make
+}
+
+package() {
+   make DESTDIR="$D" install
+}

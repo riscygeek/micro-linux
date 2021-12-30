@@ -1,0 +1,23 @@
+pkgname=zlib
+pkgver=1.2.11
+url="https://zlib.net"
+description="Compression library implementing the deflate compression method found in gzip and PKZIP"
+
+bdepends=()
+depends=()
+
+sources=(http://zlib.net/zlib-1.2.11.tar.xz)
+
+prepare() {
+   tar -xf "${S}/zlib-${pkgver}.tar.xz"
+   cd "zlib-${pkgver}"
+}
+
+build() {
+   ./configure --prefix=/usr
+   make
+}
+
+package() {
+   make DESTDIR="$D" install
+}

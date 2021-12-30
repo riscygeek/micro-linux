@@ -1,0 +1,23 @@
+pkgname=gdbm
+pkgver=1.20
+url="https://www.gnu.org/software/gdbm"
+description="GNU database library"
+
+bdepends=(readline)
+depends=()
+
+sources=(http://ftp.gnu.org/gnu/gdbm/gdbm-${pkgver}.tar.gz)
+
+prepare() {
+   tar -xf "${S}/gdbm-${pkgver}.tar.gz"
+   cd "gdbm-${pkgver}"
+}
+
+build() {
+   ./configure --prefix=/usr --enable-static --enable-libgdbm-compat
+   make
+}
+
+package() {
+   make DESTDIR="$D" install
+}

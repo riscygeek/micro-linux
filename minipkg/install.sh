@@ -5,6 +5,8 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
    exit 0
 fi
 
+[ "$1" = "--no-repo" ] && shift && NO_REPO=1
+
 if [ "$1" ]; then
    echo "$1" | grep '^/.*$' || { echo "install.sh: DESTDIR must be an absolute path"; exit 1; }
    DESTDIR="$1"
@@ -15,8 +17,10 @@ fi
 install -Dvm755 src/minipkg "${DESTDIR}/usr/bin/minipkg"             || exit 1
 install -Dvm644 minipkg.8 "${DESTDIR}/usr/share/man/man8/minipkg.8"  || exit 1
 
-mkdir -p "${DESTDIR}/var/db"
-cp -rv repo "${DESTDIR}/var/db/minipkg/" || exit 1
+if [ "$NO_REPO" = 1 ]; then
+   mkdir -p "${DESTDIR}/var/db"
+   cp -rv repo "${DESTDIR}/var/db/minipkg/" || exit 1
+fi
 
 # Fix paths in the script.
 sed \

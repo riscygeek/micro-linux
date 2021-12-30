@@ -14,13 +14,19 @@ list_installed() {
 }
 
 list_available() {
-   local pkg pkgname pkgver
+   local pkgfile pkgname pkgver installed tmp
    pushd "$REPODIR"
       for pkg in *; do
-         pkg="$REPODIR/$pkg"
-         pkg_get_from "$pkg" pkgname
-         pkg_get_from "$pkg" pkgver
-         echo "$pkgname $pkgver"
+         pkgfile="$REPODIR/$pkg"
+         pkg_get_from "$pkgfile" pkgname
+         pkg_get_from "$pkgfile" pkgver
+         if is_installed "$pkg"; then
+            tmp="$pkgver"
+            pkg_get_local "$pkg" pkgver
+            echo "$pkgname $tmp [installed: $pkgver]"
+         else
+            echo "$pkgname $pkgver"
+         fi
       done
    popd
 }
@@ -39,9 +45,9 @@ list_files() {
 #   $2      - local or repo
 #   depends * Output variable
 list_depends() {
-   if [[ $2 = local ]]; then
+   if [[ $2 = repo ]]; then
       pkg_get "$1" depends
-   elif [[ $2 = repo ]]; then
+   elif [[ $2 = local ]]; then
       is_installed "$1" || fail "Package $1 is not installed."
       pkg_get_from "$PKGDIR/$1/package.info" depends
    else

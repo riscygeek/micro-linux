@@ -125,7 +125,7 @@ install_package() {
 # Args:
 #   $@ - packages
 install_packages_i() {
-   local -a pkgs binpkgs pkgvers
+   local -a pkgs binpkgs
    local pkg binpkg str pkgver
 
    add_package() {
@@ -169,15 +169,14 @@ install_packages_i() {
    log
 
    for pkg in "$@"; do
-      pkg_get "$pkg" pkgver
-      pkgvers["$pkg"]="$pkgver"
       find_dependencies "${pkg}"
       add_package -f "${pkg}"
    done
 
    str="Packages (${#pkgs[@]})"
    for pkg in "${pkgs[@]}"; do
-      str+=" ${pkg}:${pkgvers[$pkg]}"
+      pkg_get "$pkg" pkgver
+      str+=" ${pkg}:${pkgver}"
    done
    log "$str"
    log
@@ -187,7 +186,8 @@ install_packages_i() {
    log "Downloading packages..."
    for (( i=0; i < ${#pkgs[@]}; i++ )); do
       pkg="${pkgs[$i]}"
-      log "($((i+1))/${#pkgs[@]}) Downloading $pkg:${pkgvers[$pkg]}..."
+      pkg_get "$pkg" pkgver
+      log "($((i+1))/${#pkgs[@]}) Downloading $pkg:${pkgver}..."
       download_sources "${pkg}"
    done
 
@@ -195,14 +195,18 @@ install_packages_i() {
    log "Building packages..."
    for (( i=0; i < ${#pkgs[@]}; i++ )); do
       pkg="${pkgs[$i]}"
-      log "($((i+1))/${#pkgs[@]}) Building $pkg:${pkgvers[$pkg]}..."
+      pkg_get "$pkg" pkgver
+      log "($((i+1))/${#pkgs[@]}) Building $pkg:${pkgver}..."
       build_package "${pkg}" binpkg
       binpkgs+=("$binpkg")
    done
 
    log
    log "Installing packages..."
-   for binpkg in "${binpkgs[@]}"; do
+   for (( i=0; i < ${#pkgs[@]}; i++ )); do
+      pkg="${pkgs[$i]}"
+      pkg_get "$pkg" pkgver
+      log "($((i+1))/${#pkgs[@]}) Installing $pkg:${pkgver}..."
       install_package "$binpkg" "$ROOT"
    done
 }

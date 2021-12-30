@@ -1,0 +1,6 @@
+pkgname=bash
+pkgver=$VER
+url="https://www.gnu.org/software/bash"
+description="Bourne Again Shell"
+
+depends=()

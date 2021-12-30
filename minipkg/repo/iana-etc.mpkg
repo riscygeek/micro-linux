@@ -6,7 +6,7 @@ description="/etc/protocols and /etc/services provided by IANA"
 bdepends=()
 depends=()
 
-sources=(https://github.com/Mic92/iana-etc/releases/download/${pkgver}/iana-etc-${pkgver}.tar.gz)
+sources=(http://github.com/Mic92/iana-etc/releases/download/${pkgver}/iana-etc-${pkgver}.tar.gz)
 
 prepare() {
    tar -xf "${S}/iana-etc-${pkgver}.tar.gz"

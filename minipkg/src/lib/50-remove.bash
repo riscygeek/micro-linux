@@ -6,10 +6,11 @@
 purge_package() {
    local f
    is_installed "$1" || fail "Cannot remove non-existent package $1"
+   # TODO: Optimize!
    while read -r f; do
-      [[ -d $f ]] && continue
-      rm -f "$f"
-      rmdir -p "$(dirname "$f")" &>/dev/null
+      [[ -d $ROOT/$f ]] && continue
+      rm -f "$ROOT/$f"
+      rmdir -p "$(dirname "$ROOT/$f")" &>/dev/null
    done <"$PKGDIR/$1/files"
    rm -rf "$PKGDIR/$1"
 }
@@ -19,13 +20,9 @@ purge_package() {
 #   $1 - package name
 #   $2 * outvar
 estimate_local_pkg_size() {
-   local res f sz
-   res=0
-   while read -r f; do
-      sz="$(ls -dsk1 "$ROOT/$f" | awk '{print $1}')"
-      [[ $sz ]] && res=$((res + sz))
-   done <"$PKGDIR/$1/files"
-   [[ ${#2} -ne 0 ]] && eval "$2='$res'" || echo "$res"
+   local sz
+   sz="$(ls -dsk1 $(awk "{printf \"%s/%s\\n\", \"$ROOT\", \$0}" "$PKGDIR/$1/files") | awk 'BEGIN{cnt=0} {cnt+=$1} END{print cnt}')"
+   [[ ${#2} -ne 0 ]] && eval "$2='$sz'" || echo "$sz"
 }
 
 # Interactively remove packages.
@@ -62,7 +59,7 @@ purge_packages_i() {
 # Args:
 #   $@ - package names
 remove_packages_i() {
-   local str pkg pkgver psize size rdeps
+   local str pkg pkgver psize size rdeps rdep
 
    log "Estimating size..."
    log
@@ -75,7 +72,9 @@ remove_packages_i() {
 
       rdeps=()
       list_rdeps "$pkg"
-      [[ ${#rdeps[@]} = 0 ]] || fail "One or more packages depend on $1: ${rdeps[@]}"
+      for rdep in "${rdeps[@]}"; do
+         contains "$rdep" "$@" || fail "One or more packages depend on ${pkg}: ${rdeps[@]}"
+      done
 
       estimate_local_pkg_size "$pkg" psize
       size=$((size + psize))

@@ -1,0 +1,23 @@
+pkgname=groff
+pkgver=1.22.4
+url="https://www.gnu.org/software/groff"
+description="GNU troff text-formatting system"
+
+bdepends=(libstdcxx-stage1)
+depends=(perl)
+
+sources=(http://ftp.gnu.org/gnu/groff/groff-${pkgver}.tar.gz)
+
+prepare() {
+   tar -xf "${S}/groff-${pkgver}.tar.gz"
+   cd "groff-${pkgver}"
+}
+
+build() {
+   PAGE=A4 ./configure --prefix=/usr
+   make -j1
+}
+
+package() {
+   make DESTDIR="$D" install
+}

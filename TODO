@@ -3,3 +3,5 @@
 
 # Minipkg
 - Operations: search, info
+- Optimizations!
+- Caching binpkgs in /var/cache/minipkg/binpkgs
