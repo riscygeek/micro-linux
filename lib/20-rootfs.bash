@@ -48,11 +48,30 @@ create_rootfs() {
 }
 
 create_files() {
+   local f pkg
    log "Creating system-configuration files..."
 
-   for f in $(ls files); do
-      cp -r "files/$f" "$SYSROOT"
+   for f in files/{etc,root,usr}; do
+      cp -r "$f" "$SYSROOT"
    done
+
+   if [[ $ENABLE_MINIPKG = 1 ]]; then
+      replace_version() {
+         mkdir -p "$SYSROOT/var/db/minipkg/packages/$1"
+         sed "s/^pkgver=.*\$/pkgver=$2/"                          \
+            "files/var/db/minipkg/packages/$1/package.info"       \
+            > "$SYSROOT/var/db/minipkg/packages/$1/package.info"
+      }
+
+      replace_version binutils      "$BINUTILS_VERSION"
+      replace_version busybox       "$BUSYBOX_VERSION"
+      replace_version gcc-stage1    "$GCC_VERSION"
+      replace_version linux         "$KERNEL_VERSION"
+      replace_version linux-headers "$KERNEL_VERSION"
+      replace_version make          "$MAKE_VERSION"
+      replace_version minipkg       "$MINIPKG_VERSION"
+      replace_version $LIBC_NAME    "$LIBC_VERSION"
+   fi
 }
 
 create_e2fs() {

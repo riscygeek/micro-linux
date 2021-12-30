@@ -1,0 +1,7 @@
+pkgname=busybox
+pkgver=$VER
+url="http://www.busybox.net"
+description="Utilities for rescue and embedded systems"
+
+depends=()
+

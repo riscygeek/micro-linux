@@ -15,6 +15,7 @@ fi
 install -Dvm755 src/minipkg "${DESTDIR}/usr/bin/minipkg"             || exit 1
 install -Dvm644 minipkg.8 "${DESTDIR}/usr/share/man/man8/minipkg.8"  || exit 1
 
+mkdir -p "${DESTDIR}/var/db"
 cp -rv repo "${DESTDIR}/var/db/minipkg/" || exit 1
 
 # Fix paths in the script.

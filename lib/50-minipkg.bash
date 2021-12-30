@@ -9,7 +9,7 @@ minipkg_add() {
    local dir
    [[ $ENABLE_MINIPKG = 1 ]] || return
 
-   dir="$SYSROOT/var/db/minipkg/packages/$1:$2"
+   dir="$SYSROOT/var/db/minipkg/packages/$1"
    mkdir -p "$dir"
 
    pushd "$3"

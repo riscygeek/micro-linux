@@ -29,6 +29,14 @@ parse_cmdline_args() {
    # Parse common options.
    while [[ $@ ]]; do
       case "$1" in
+      -h|--help)
+         print_help
+         exit 0
+         ;;
+      --version)
+         echo "$VERSION"
+         exit 0
+         ;;
       --root=*)
          get_arg "$1" ROOT
          shift
@@ -44,12 +52,8 @@ parse_cmdline_args() {
 
    # Parse the operation.
    case "$1" in
-   -h|--help|help)
+   help)
       print_help
-      exit 0
-      ;;
-   --version)
-      echo "$VERSION"
       exit 0
       ;;
    install|list|remove|purge)

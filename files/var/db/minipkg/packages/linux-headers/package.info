@@ -1,0 +1,7 @@
+pkgname=linux-headers
+pkgver=$VER
+url="https://kernel.org"
+description="Linux kernel-specific header files"
+
+depends=()
+

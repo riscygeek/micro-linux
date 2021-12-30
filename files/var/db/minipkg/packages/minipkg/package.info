@@ -1,0 +1,6 @@
+pkgname=minipkg
+pkgver=$VER
+url="https://github.com/riscygeek/micro-linux"
+description="Package manager for Micro-Linux"
+
+depends=()

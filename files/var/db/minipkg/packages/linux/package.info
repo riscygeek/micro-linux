@@ -1,0 +1,8 @@
+pkgname=linux
+pkgver=$VER
+url="https://kernel.org"
+description="The Linux kernel and modules"
+
+depends=()
+
+
