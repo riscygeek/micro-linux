@@ -1,3 +1,2 @@
-- Packages: Groff
+- Create a simple package manager
 - More modular --enable-... and package management.
-- Downloading the GCC dependencies at download-time and not configure-time

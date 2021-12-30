@@ -60,7 +60,7 @@ create_e2fs() {
    mp="/mnt/micro-linux-rootfs"
 
    log "Creating ext2 image..."
-   qcheck fallocate -l 2G rootfs.ext2
+   qcheck fallocate -l "$E2FS_SIZE" rootfs.ext2
    qcheck mke2fs rootfs.ext2
    sudo mkdir -p "${mp}"
 

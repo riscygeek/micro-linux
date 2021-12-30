@@ -39,7 +39,14 @@ build_host_busybox() {
          check cp "$BUSYBOX_CONFIG" .config
       else
          qcheck make ARCH="${ARCH}" defconfig
-         [[ $ENABLE_MENUCONFIG = 1 ]] && make ARCH="${ARCH}" menuconfig
+      fi
+      [[ $ENABLE_MENUCONFIG = 1 ]] && make ARCH="${ARCH}" menuconfig
+
+      # Save the busybox config, if specified.
+      if [[ $BUSYBOX_SAVE_TO = - ]]; then
+         cp .config "$BUSYBOX_CONFIG"
+      elif [[ $BUSYBOX_SAVE_TO ]]; then
+         cp .config "$BUSYBOX_SAVE_TO"
       fi
 
       if [[ ${LIBC_NAME} = musl ]]; then

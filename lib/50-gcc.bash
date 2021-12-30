@@ -15,10 +15,56 @@ download_gcc() {
    fi
 }
 
+download_gmp() {
+   local file url
+   file="gmp-$1.tar.xz"
+   url="https://ftp.gnu.org/gnu/gmp/${file}"
+   GMP_TAR="${TOP}/sources/${file}"
+
+   if [[ ! -f $GMP_TAR ]]; then
+      log "Downloading gmp..."
+      download "${GMP_TAR}" "${url}"
+   fi
+}
+
+download_mpc() {
+   local file url
+   file="mpc-$1.tar.gz"
+   url="https://ftp.gnu.org/gnu/mpc/${file}"
+   MPC_TAR="${TOP}/sources/${file}"
+
+   if [[ ! -f $MPC_TAR ]]; then
+      log "Downloading mpc..."
+      download "${MPC_TAR}" "${url}"
+   fi
+}
+
+download_mpfr() {
+   local file url
+   file="mpfr-$1.tar.xz"
+   url="https://ftp.gnu.org/gnu/mpfr/${file}"
+   MPFR_TAR="${TOP}/sources/${file}"
+
+   if [[ ! -f $MPFR_TAR ]]; then
+      log "Downloading mpfr..."
+      download "${MPFR_TAR}" "${url}"
+   fi
+}
+
 create_flags() {
    flags=()
    [[ $WITH_ARCH ]] && flags+=("--with-arch=$WITH_ARCH")
    [[ $WITH_CPU  ]] && flags+=("--with-cpu=$WITH_CPU")
+}
+
+gcc_unpack_runtime() {
+   pushd "$1"
+      [[ -d gmp && -d mpc && -d mpfr ]] && return 0
+      log "Unpacking the runtime dependencies..."
+      [[ ! -d gmp ]] && check tar -xf "$GMP_TAR" && check mv "gmp-$GMP_VERSION" "gmp"
+      [[ ! -d mpc ]] && check tar -xf "$MPC_TAR" && check mv "mpc-$MPC_VERSION" "mpc"
+      [[ ! -d mpfr ]] && check tar -xf "$MPFR_TAR" && check mv "mpfr-$MPFR_VERSION" "mpfr"
+   popd
 }
 
 # Build the stage-1 compiler.
@@ -35,14 +81,11 @@ build_cross_gcc_stage1() {
    mkdir -p "$TOOLS" build
 
    if [[ ! -d ${builddir} ]]; then
-      log "Extracting the compiler..."
+      log "Extracting..."
       check tar -C build -xf "${GCC_TAR}"
    fi
    
-   pushd "${builddir}"
-      log "Downloading the compiler runtime..."
-      qcheck ./contrib/download_prerequisites
-   popd
+   gcc_unpack_runtime "$builddir"
 
    rm -rf "${builddir}/build"
 
@@ -57,6 +100,7 @@ build_cross_gcc_stage1() {
          --with-newlib                 \
          --without-headers             \
          --enable-initfini-array       \
+         --disable-bootstrap           \
          --disable-nls                 \
          --disable-shared              \
          --disable-multilib            \
@@ -93,12 +137,13 @@ build_cross_gcc() {
 
    [[ -d ${builddir} ]] || fail "${builddir} is not present."
    
+   gcc_unpack_runtime "$builddir"
 
    pushd "${builddir}/build"
       log "Configuring..."
       qcheck ../configure              \
          --prefix="$TOOLS"             \
-         --host="${BUILD}"        \
+         --host="${BUILD}"             \
          --target="$TARGET"            \
          --with-sysroot="${SYSROOT}"   \
          --disable-nls                 \
@@ -106,6 +151,8 @@ build_cross_gcc() {
          --disable-multilib            \
          --disable-libsanitizer        \
          --enable-languages=c,c++      \
+         --disable-libstdcxx-pch       \
+         --disable-bootstrap           \
          "${flags[@]}"
 
       log "Building..."
@@ -133,10 +180,7 @@ build_host_gcc() {
       tar -C build -xf "${GCC_TAR}"
    fi
    
-   pushd "${builddir}"
-      log "Downloading the compiler runtime..."
-      qcheck ./contrib/download_prerequisites
-   popd
+   gcc_unpack_runtime "$builddir"
 
    log "Cleaning up..."
    rm -rf "${builddir}/build"
@@ -144,7 +188,8 @@ build_host_gcc() {
    mkdir "${builddir}/build"
    pushd "${builddir}/build"
       log "Configuring..."
-      CC="${TARGET}-gcc" qcheck ../configure \
+      qcheck ../configure                    \
+         CC_FOR_TARGET="${CROSS}gcc"         \
          --prefix="/usr"                     \
          --build="$BUILD"                    \
          --target="$TARGET"                  \
@@ -152,16 +197,17 @@ build_host_gcc() {
          --program-prefix=                   \
          --with-build-sysroot="$SYSROOT"     \
          --disable-nls                       \
-         --disable-shared                    \
          --disable-multilib                  \
          --disable-libatomic                 \
          --disable-libgomp                   \
          --disable-libquadmath               \
+         --disable-libssp                    \
          --disable-libvtv                    \
-         --disable-libsanitizer              \
          --disable-libstdcxx                 \
-         --enable-languages=c                \
+         --disable-bootstrap                 \
+         --enable-languages=c,c++            \
          "${flags[@]}"
+
 
       log "Building..."
       qcheck pmake
@@ -169,6 +215,8 @@ build_host_gcc() {
       log "Installing..."
       qcheck make DESTDIR="$SYSROOT" install
       check ln -sf gcc "$SYSROOT/usr/bin/cc"
+
+      check cp "$GCC_TAR" "$SYSROOT/usr/src/"
    popd
    indent_log -1
 }

@@ -10,7 +10,9 @@ print_help() {
    echo "  --download                  Just download the dependencies."
    echo "  --build                     Build a rootfs."
    echo "  --build-toolchain           Just build the toolchain."
+   echo "  --build-kernel              Just build the kernel."
    echo "  --clean                     Delete the rootfs and build directories."
+   echo "  --clean-all                 Delete all non-source files."
    echo "  --create-e2fs               Just create an ext2 image and exit."
    echo
    echo "Configuration:"
@@ -26,9 +28,14 @@ print_help() {
    echo "  --libc-version=VERSION      Specify the libc version [musl: $MUSL_VERSION, glibc: $GLIBC_VERSION]."
    echo "  --bash-version=VERSION      Specify the bash version [$BASH_VERSION]."
    echo "  --iana-etc-version=VERSION  Specify the iana-etc version [$IANA_ETC_VERSION]."
+   echo "  --gmp-version=VERSION       Specify the gmp version [$GMP_VERSION]."
+   echo "  --mpc-version=VERSION       Specify the mpc version [$MPC_VERSION]."
+   echo "  --mpfr-version=VERSION      Specify the mpfr versin [$MPFR_VERSION]."
    echo "  --kernel-defconfig=NAME     Specify the kernel defconfig."
    echo "  --kernel-config=CONFIG      Specify a kernel config."
+   echo "  --save-kconfig[=PATH]       Save the kernel config."
    echo "  --busybox-config=CONFIG     Specify a busybox config."
+   echo "  --save-bbconfig[=CONFIG]    Save the busybox config."
    echo "  --with-arch=ARCH            Gets passed to configure."
    echo "  --with-toolchain=PATH       Use a different toolchain [$TOOLS]."
    echo
@@ -69,6 +76,13 @@ parse_cmdline_args() {
          log "Cleaning old directories..."
          sudo rm -rf "$SYSROOT"
          rm -rf "build"
+         rm -f rootfs.ext2
+         ;;
+      --clean-all)
+         log "Cleaning old directories..."
+         sudo rm -rf "$SYSROOT"
+         rm -rf "build" "tools"
+         rm -f rootfs.ext2
          ;;
       --download)
          DO_BUILD=d
@@ -78,6 +92,9 @@ parse_cmdline_args() {
          ;;
       --build-toolchain)
          DO_BUILD=t
+         ;;
+      --build-kernel)
+         DO_BUILD=k
          ;;
       -v|--verbose)
          VERBOSE=1
@@ -110,6 +127,15 @@ parse_cmdline_args() {
       --gcc-version=*)
          get_arg GCC_VERSION "$1"
          ;;
+      --gmp-versio=*)
+         get_arg GMP_VERSION "$1"
+         ;;
+      --mpc-version=*)
+         get_arg MPC_VERSION "$1"
+         ;;
+      --mpfr-version=*)
+         get_arg MPFR_VERSION "$1"
+         ;;
       --make-version=*)
          get_arg MAKE_VERSION "$1"
          ;;
@@ -125,8 +151,20 @@ parse_cmdline_args() {
       --kernel-config=*)
          get_arg KERNEL_CONFIG "$1"
          ;;
+      --save-kconfig)
+         KERNEL_SAVE_TO="-"
+         ;;
+      --save-kconfig)
+         get_arg KERNEL_SAVE_TO "$1"
+         ;;
       --busybox-config=*)
          get_arg BUSYBOX_CONFIG "$1"
+         ;;
+      --save-bbconfig)
+         BUSYBOX_SAVE_TO="-"
+         ;;
+      --save-bbconfig=*)
+         get_arg BUSYBOX_SAVE_TO "$1"
          ;;
       --with-arch=*)
          get_arg WITH_ARCH "$1"
@@ -190,6 +228,9 @@ parse_cmdline_args() {
          create_e2fs
          exit
          ;;
+      --e2fs-size=*)
+         get_arg E2FS_SIZE "$1"
+         ;;
       -*)
          fail "invalid option: $1"
          ;;
@@ -199,4 +240,8 @@ parse_cmdline_args() {
       esac
       shift
    done
+
+   # Check for invalid configuration options.
+   [[ $KERNEL_SAVE_TO = - && -z $KERNEL_CONFIG ]] && fail "--save-kconfig must be provided with an argument."
+   [[ $BUSYBOX_SAVE_TO = - && -z $BUSYBOX_CONFIG ]] && fail "--save-bbconfig must be provided with an argument."
 }

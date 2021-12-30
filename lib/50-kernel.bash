@@ -89,6 +89,12 @@ build_kernel() {
    log "Building the kernel..."
    indent_log +1
 
+   # Extract the kernel tarball if not present.
+   if [[ ! -d ${builddir} ]]; then
+      log "Extracting..."
+      check tar -C build -xf "${KERNEL_TAR}"
+   fi
+
    pushd "${builddir}"
 
       log "Configuring..."
@@ -96,7 +102,14 @@ build_kernel() {
          check cp "$KERNEL_CONFIG" .config
       else
          [[ $KERNEL_DEFCONFIG ]] && kmake "${KERNEL_DEFCONFIG}_defconfig" || kmake defconfig
-         [[ $ENABLE_MENUCONFIG = 1 ]] && make ARCH="${ARCH}" CROSS_COMPILE="${CROSS}" menuconfig
+      fi
+      [[ $ENABLE_MENUCONFIG = 1 ]] && make ARCH="${ARCH}" CROSS_COMPILE="${CROSS}" menuconfig
+
+      # Save the kernel config, if specified.
+      if [[ $KERNEL_SAVE_TO = - ]]; then
+         cp .config "$KERNEL_CONFIG"
+      elif [[ $KERNEL_SAVE_TO ]]; then
+         cp .config "$KERNEL_SAVE_TO"
       fi
 
       log "Building..."
@@ -107,7 +120,7 @@ build_kernel() {
       grep -q CONFIG_MODULES=y .config && kmake INSTALL_MOD_PATH="${SYSROOT}" modules_install
       install -m644 .config "${SYSROOT}/boot/config"
 
-   popd "${builddir}"
+   popd
 
    indent_log -1
 }

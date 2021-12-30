@@ -100,8 +100,8 @@ build_glibc() {
       echo "rootsbindir=/usr/sbin" > configparms
       qcheck ../configure                          \
          --prefix=/usr                             \
-         --host="${BUILD}"                    \
-         --build="${BUILD}"                   \
+         --host="${BUILD}"                         \
+         --build="${BUILD}"                        \
          --with-headers="${SYSROOT}/usr/include"   \
          --enable-kernel=3.2                       \
          --disable-multilib                        \
