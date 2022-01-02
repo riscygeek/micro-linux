@@ -1,6 +1,7 @@
 # Micro-Linux
 Micro-Linux is a source-based Linux distribution focussed on providing
 a simple means of building a minimal Linux system that can rebuild itself.
+[Link to the repository](https://github.com/riscygeek/micro-linux-repo).
 
 ### Inspiration or Reason why this yet another Linux distribution exists
 To test my [bcc](https://github.com/riscygeek/bcc) compiler on RISC-V I had to build a Linux system that could build bcc.
