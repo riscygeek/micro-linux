@@ -19,7 +19,7 @@ and it inspired me to create a simple bootstrap script to build a tiny Linux dis
 - [gmp](https://gmplib.org/), [mpc](http://www.multiprecision.org/mpc/) and [mpfr](https://www.mpfr.org/) (statically-linked runtime-dependencies for GCC)
 - [GNU Make](https://www.gnu.org/software/make/)
 - Either [musl](https://musl.libc.org/) or [glibc](https://www.gnu.org/software/libc/) (for the host C library)
-- and [bash](https://www.gnu.org/software/bash/)
+- [Bash](https://www.gnu.org/software/bash/)
 - [minipkg](minipkg) package manager (can be disabled with `--disable-minipkg`)
 
 ## Bootstrap process
