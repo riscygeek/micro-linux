@@ -1,8 +1,0 @@
-pkgname=glibc
-pkgver=$VER
-url="https://www.gnu.org/software/libc/"
-description="GNU C library"
-
-depends=()
-
-provides=(libc)

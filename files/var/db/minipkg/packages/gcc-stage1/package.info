@@ -1,8 +1,0 @@
-pkgname=gcc-stage1
-pkgver=$VER
-url="https://gcc.gnu.org"
-description="The GNU Compiler Collection - stage 1"
-
-depends=(binutils)
-
-provides=(gcc)
