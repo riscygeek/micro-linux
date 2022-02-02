@@ -1,9 +1,47 @@
-#!/usr/bin/env bash
+#+TITLE: Bootstrap
+#+PROPERTY: header-args :tangle bootstrap.sh
 
+* Table of Contents :TOC:
+- [[#shebang][Shebang]]
+- [[#define-constants][Define constants]]
+  - [[#default-build-options][Default build options.]]
+  - [[#directories][Directories]]
+- [[#package-information][Package Information]]
+  - [[#package-versions][Package Versions]]
+  - [[#package-tar-files][Package Tar Files]]
+  - [[#package-urls][Package URLs]]
+- [[#utility-functions][Utility Functions]]
+- [[#preparation][Preparation]]
+  - [[#dependency-checking][Dependency checking]]
+  - [[#check-configuration-options][Check configuration options]]
+  - [[#create-directories][Create directories]]
+  - [[#create-a-basic-rootfs-filesystem-layout][Create a basic rootfs filesystem layout]]
+  - [[#download-the-sources][Download the sources]]
+- [[#build-cross-minipkg2][Build cross-minipkg2]]
+  - [[#configure-minipkg2][Configure minipkg2]]
+- [[#install-package-filesystem][Install package: filesystem]]
+- [[#install-the-kernel-headers][Install the kernel headers]]
+- [[#build-the-cross-toolchain][Build the cross-toolchain]]
+  - [[#build-the-cross-binutils][Build the cross-binutils]]
+  - [[#build-the-stage-1-cross-compiler][Build the stage-1 cross-compiler]]
+  - [[#build-the-c-library][Build the C library]]
+  - [[#build-the-final-cross-compiler][Build the final cross-compiler]]
+- [[#install-system-packages][Install system packages]]
+
+* Shebang
+#+begin_src bash
+#!/usr/bin/env bash
+#+end_src
+
+* Define constants
+** Default build options.
+#+begin_src bash
 # TODO: option parsing
 MACH_TARGET="x86_64-micro-linux-musl"
 MACH_BUILD="$(gcc -dumpmachine)"
-
+#+end_src
+** Directories
+#+begin_src  bash
 topdir="$PWD"
 srcdir="$topdir/src"
 builddir="$topdir/build"
@@ -13,17 +51,27 @@ toolsdir="$topdir/tools"
 export PATH="$toolsdir/bin:$PATH"
 alias eminipkg2="check $toolsdir/bin/minipkg2 --root='$rootdir' --host='$MACH_TARGET'"
 shopt -s expand_aliases
+#+end_src
 
+* Package Information
+** Package Versions
+#+begin_src bash
 V_BINUTILS="2.36.1"
 V_GCC="11.1.0"
 V_MINIPKG2="0.1.2"
 V_LINUX="5.16.2"
+#+end_src
 
+** Package Tar Files
+#+begin_src bash
 TAR_BINUTILS="binutils-${V_BINUTILS}.tar.gz"
 TAR_GCC="gcc-${V_GCC}.tar.gz"
 TAR_MINIPKG2="minipkg2-${V_MINIPKG2}.tar.gz"
 TAR_LINUX="linux-${V_LINUX}.tar.xz"
+#+end_src
 
+** Package URLs
+#+begin_src bash
 #GNUFTP="https://ftp.gnu.org/gnu"
 GNUFTP="https://ftpmirror.gnu.org/gnu"
 URL_BINUTILS="$GNUFTP/binutils/$TAR_BINUTILS"
@@ -32,7 +80,10 @@ URL_MINIPKG2="https://github.com/riscygeek/minipkg2/archive/refs/tags/v${V_MINIP
 URL_LINUX="https://mirrors.edge.kernel.org/pub/linux/kernel/v$(cut -d'.' -f1 <<<"$V_LINUX").x/$TAR_LINUX"
 
 URL_REPO="https://github.com/riscygeek/micro-linux-repo"
+#+end_src
 
+* Utility Functions
+#+begin_src bash
 fail() { echo "$@" >&2; exit 1; }
 
 # Check if a program is installed.
@@ -54,31 +105,40 @@ check() { "$@" || fail "Failed to execute '$@'"; }
 # Parallel make.
 pmake() { make -j$(nproc); }
 
+#+end_src
+
+
+* Preparation
+** Dependency checking
+#+begin_src bash
 check_dep "which"
 check_dep "make"
 check_dep "curl"
 check_dep "gcc"
 check_dep "meson"
 check_dep "git"
+#+end_src
 
+** Check configuration options
+#+begin_src bash
 # Check the kernel version.
 [[ $(cut -d. -f1 <<< "$V_LINUX") -lt 3 ]] && fail "Linux kernel version must be at least 3.0"
 
 # Determine the C library.
 case "$MACH_TARGET" in
-*-gnu*)
+,*-gnu*)
     LIBC="glibc"
     V_LIBC="$V_GLIBC"
     TAR_LIBC="$TAR_GLIBC"
     URL_LIBC="$URL_GLIBC"
     ;;
-*-musl*)
+,*-musl*)
     LIBC="musl"
     V_LIBC="$V_MUSL"
     TAR_LIBC="$TAR_MUSL"
     URL_LIBC="$URL_MUSL"
     ;;
-*)
+,*)
     fail "Failed to detect C library for '$MACH_TARGET'"
     ;;
 esac
@@ -94,7 +154,7 @@ arm-*|armv*-*|aarch64-*)
 riscv*-*)
     KARCH="riscv"
     ;;
-*)
+,*)
     fail "Failed to detect the kernel CPU architecture for '$MACH_TARGET'"
     ;;
 esac
@@ -107,14 +167,18 @@ i[3456]86-*|arm-*|armv*-*|riscv32-*)
 x86_64-*|aarch64-*|riscv64-*)
     BITS=64
     ;;
-*)
+,*)
     fail "Failed to determne the bit-size of '$MACH_TARGET'"
     ;;
 esac
-
+#+end_src
+** Create directories
+#+begin_src bash
 rm -rf "$builddir"
 mkdir -p "$srcdir" "$rootdir" "$builddir" "$toolsdir" || exit 1
-
+#+end_src
+** Create a basic rootfs filesystem layout
+#+begin_src bash
 _offline() {
 symlink() { [[ -L "$2" ]] || check ln -sf "$1" "$2"; }
 mkchardev() { [[ -c "$1" ]] || check sudo mknod -m "$2" "$1" c "$3" "$4"; }
@@ -141,12 +205,16 @@ mkchardev "$rootdir/dev/null"     666 1 3
 mkchardev "$rootdir/dev/zero"     666 1 5
 mkchardev "$rootdir/dev/full"     666 1 7
 }
-
+#+end_src
+** Download the sources
+#+begin_src bash
 download "$URL_LINUX"       "$srcdir/$TAR_LINUX"
 download "$URL_BINUTILS"    "$srcdir/$TAR_BINUTILS"
 download "$URL_GCC"         "$srcdir/$TAR_GCC"
 download "$URL_MINIPKG2"    "$srcdir/$TAR_MINIPKG2"
-
+#+end_src
+* Build cross-minipkg2
+#+begin_src bash
 if [[ ! -f $toolsdir/bin/minipkg2 ]]; then
     echo "Building build-minipkg2..."
     check tar -xf "$srcdir/$TAR_MINIPKG2" -C "$builddir"
@@ -157,11 +225,18 @@ if [[ ! -f $toolsdir/bin/minipkg2 ]]; then
         check meson install -C build
     epopd
 fi
-
+#+end_src
+** Configure minipkg2
+#+begin_src bash
 eminipkg2 repo --init "$URL_REPO"
-
+#+end_src
+* Install package: filesystem
+#+begin_src bash
 eminipkg2 install -y filesystem
+#+end_src
 
+* Install the kernel headers
+#+begin_src bash
 if [[ ! -d $rootdir/usr/include/linux ]]; then
     echo "Installing the kernel headers..."
     check tar -xf "$srcdir/$TAR_LINUX" -C "$builddir"
@@ -171,7 +246,11 @@ if [[ ! -d $rootdir/usr/include/linux ]]; then
         check make ARCH="$KARCH" INSTALL_HDR_PATH="$rootdir/usr" headers_install
     epopd
 fi
+#+end_src
 
+* Build the cross-toolchain
+** Build the cross-binutils
+#+begin_src bash
 if ! has "${MACH_TARGET}-as"; then
     echo "Building the cross-binutils..."
     check tar -xf "$srcdir/$TAR_BINUTILS" -C "$builddir"
@@ -193,7 +272,9 @@ if ! has "${MACH_TARGET}-as"; then
         epopd
     epopd
 fi
-
+#+end_src
+** Build the stage-1 cross-compiler
+#+begin_src bash
 if ! has "${MACH_TARGET}-gcc"; then
     BUILD_CCC=1
     echo "Building the stage-1 cross-gcc..."
@@ -211,25 +292,28 @@ if ! has "${MACH_TARGET}-gcc"; then
                 --without-headers           \
                 --enable-languages=c        \
                 --enable-initfini-array     \
-               --disable-nls                \
-               --disable-multiblib          \
-               --disable-bootstrap          \
-               --disable-shared             \
-               --disable-threads            \
-               --disable-decimal-float      \
-               --disable-libatomic          \
-               --disable-libgomp            \
-               --disable-libquadmath        \
-               --disable-libssp             \
-               --disable-libvtv             \
-               --disable-libstdcxx
+                --disable-nls               \
+                --disable-multiblib         \
+                --disable-bootstrap         \
+                --disable-shared            \
+                --disable-threads           \
+                --disable-decimal-float     \
+                --disable-libatomic         \
+                --disable-libgomp           \
+                --disable-libquadmath       \
+                --disable-libssp            \
+                --disable-libvtv            \
+                --disable-libstdcxx
 
             check pmake
             check make install
         epopd
     epopd
 fi
+#+end_src
 
+** Build the C library
+#+begin_src bash
 if [[ ! -f $rootdir/lib/libc.so ]]; then
     eminipkg2 install -y "$LIBC"
     _tmp2() {
@@ -265,14 +349,17 @@ if [[ ! -f $rootdir/lib/libc.so ]]; then
             check pmake
             check make DESTDIR="$rootdir" install
             ;;
-        *)
+        ,*)
             fail "Unsupported C library '$LIBC'"
             ;;
         esac
     epopd
     }
 fi
+#+end_src
 
+** Build the final cross-compiler
+#+begin_src bash
 if [[ $BUILD_CCC = 1 ]]; then
     echo "Building the final cross-compiler..."
     [[ -d $builddir/gcc-$V_GCC ]] || check tar -xf "$srcdir/$TAR_GCC" -C "$builddir"
@@ -296,5 +383,8 @@ if [[ $BUILD_CCC = 1 ]]; then
         check make install
     epopd
 fi
-
-eminipkg2 install -y busybox bash make binutils gcc
+#+end_src
+* Install system packages
+#+begin_src bash
+eminipkg2 install -y busybox bash make binutils
+#+end_src
