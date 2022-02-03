@@ -15,18 +15,23 @@
   - [[#dependency-checking][Dependency checking]]
   - [[#check-configuration-options][Check configuration options]]
   - [[#create-directories][Create directories]]
-  - [[#create-a-basic-rootfs-filesystem-layout][Create a basic rootfs filesystem layout]]
   - [[#download-the-sources][Download the sources]]
 - [[#build-cross-minipkg2][Build cross-minipkg2]]
   - [[#configure-minipkg2][Configure minipkg2]]
 - [[#install-package-filesystem][Install package: filesystem]]
-- [[#install-the-kernel-headers][Install the kernel headers]]
 - [[#build-the-cross-toolchain][Build the cross-toolchain]]
   - [[#build-the-cross-binutils][Build the cross-binutils]]
   - [[#build-the-stage-1-cross-compiler][Build the stage-1 cross-compiler]]
   - [[#build-the-c-library][Build the C library]]
   - [[#build-the-final-cross-compiler][Build the final cross-compiler]]
-- [[#install-system-packages][Install system packages]]
+- [[#install-temporary-build-environment][Install temporary build environment]]
+  - [[#install-temporary-packages][Install temporary packages]]
+  - [[#download-sources-for-building-minipkg2-in-chroot][Download sources for building minipkg2 in chroot]]
+  - [[#setup-system-for-chroot][Setup system for chroot]]
+- [[#enter-chroot-and-run-script][Enter chroot and run script]]
+- [[#change-owner-of-rootfs][Change owner of rootfs]]
+- [[#installation-finished][Installation finished]]
+- [[#todo][TODO]]
 
 * Shebang
 #+begin_src bash
@@ -49,7 +54,8 @@ rootdir="$topdir/rootfs"
 toolsdir="$topdir/tools"
 
 export PATH="$toolsdir/bin:$PATH"
-alias eminipkg2="check $toolsdir/bin/minipkg2 --root='$rootdir' --host='$MACH_TARGET'"
+alias eminipkg2="check $toolsdir/bin/minipkg2 --root='$rootdir'"
+alias ecminipkg2="eminipkg2 --host='$MACH_TARGET'"
 shopt -s expand_aliases
 #+end_src
 
@@ -58,8 +64,7 @@ shopt -s expand_aliases
 #+begin_src bash
 V_BINUTILS="2.36.1"
 V_GCC="11.1.0"
-V_MINIPKG2="0.1.2"
-V_LINUX="5.16.2"
+V_MINIPKG2="0.2.3"
 #+end_src
 
 ** Package Tar Files
@@ -67,7 +72,6 @@ V_LINUX="5.16.2"
 TAR_BINUTILS="binutils-${V_BINUTILS}.tar.gz"
 TAR_GCC="gcc-${V_GCC}.tar.gz"
 TAR_MINIPKG2="minipkg2-${V_MINIPKG2}.tar.gz"
-TAR_LINUX="linux-${V_LINUX}.tar.xz"
 #+end_src
 
 ** Package URLs
@@ -77,7 +81,6 @@ GNUFTP="https://ftpmirror.gnu.org/gnu"
 URL_BINUTILS="$GNUFTP/binutils/$TAR_BINUTILS"
 URL_GCC="$GNUFTP/gcc/gcc-${V_GCC}/$TAR_GCC"
 URL_MINIPKG2="https://github.com/riscygeek/minipkg2/archive/refs/tags/v${V_MINIPKG2}.tar.gz"
-URL_LINUX="https://mirrors.edge.kernel.org/pub/linux/kernel/v$(cut -d'.' -f1 <<<"$V_LINUX").x/$TAR_LINUX"
 
 URL_REPO="https://github.com/riscygeek/micro-linux-repo"
 #+end_src
@@ -122,7 +125,6 @@ check_dep "git"
 ** Check configuration options
 #+begin_src bash
 # Check the kernel version.
-[[ $(cut -d. -f1 <<< "$V_LINUX") -lt 3 ]] && fail "Linux kernel version must be at least 3.0"
 
 # Determine the C library.
 case "$MACH_TARGET" in
@@ -143,21 +145,6 @@ case "$MACH_TARGET" in
     ;;
 esac
 
-# Determine the kernel CPU architecture.
-case "$MACH_TARGET"  in
-i[3456]86-*|x86_64-*)
-    KARCH="x86"
-    ;;
-arm-*|armv*-*|aarch64-*)
-    KARCH="arm"
-    ;;
-riscv*-*)
-    KARCH="riscv"
-    ;;
-,*)
-    fail "Failed to detect the kernel CPU architecture for '$MACH_TARGET'"
-    ;;
-esac
 
 # Determine the bit-size
 case "$MACH_TARGET" in
@@ -168,7 +155,7 @@ x86_64-*|aarch64-*|riscv64-*)
     BITS=64
     ;;
 ,*)
-    fail "Failed to determne the bit-size of '$MACH_TARGET'"
+    fail "Failed to determine the bit-size of '$MACH_TARGET'"
     ;;
 esac
 #+end_src
@@ -177,38 +164,8 @@ esac
 rm -rf "$builddir"
 mkdir -p "$srcdir" "$rootdir" "$builddir" "$toolsdir" || exit 1
 #+end_src
-** Create a basic rootfs filesystem layout
-#+begin_src bash
-_offline() {
-symlink() { [[ -L "$2" ]] || check ln -sf "$1" "$2"; }
-mkchardev() { [[ -c "$1" ]] || check sudo mknod -m "$2" "$1" c "$3" "$4"; }
-check mkdir -p "$rootdir"/{boot,dev,etc,home,mnt,opt,proc,root,sys,tmp,usr}
-check mkdir -p "$rootdir"/usr/{bin,include,lib,libexec,share,src}
-check mkdir -p "$rootdir"/usr/local/{bin,etc,include,lib,libexec,share,src}
-check mkdir -p "$rootdir"/var/{cache,db,lib,local,log,spool,tmp}
-symlink ../etc          "$rootdir/usr/etc"
-symlink lib             "$rootdir/lib$BITS"
-symlink bin             "$rootdir/usr/sbin"
-symlink usr/bin         "$rootdir/bin"
-symlink usr/bin         "$rootdir/sbin"
-symlink usr/lib         "$rootdir/lib"
-symlink usr/lib         "$rootdir/lib$BITS"
-symlink ../proc/mounts  "$rootdir/etc/mtab"
-
-check touch         "$rootdir/var/log/lastlog"
-check chmod 700     "$rootdir/root"
-check chmod 1777    "$rootdir/tmp" "$rootdir/var/tmp"
-check chmod 664     "$rootdir/var/log/lastlog"
-
-mkchardev "$rootdir/dev/console"  600 5 1
-mkchardev "$rootdir/dev/null"     666 1 3
-mkchardev "$rootdir/dev/zero"     666 1 5
-mkchardev "$rootdir/dev/full"     666 1 7
-}
-#+end_src
 ** Download the sources
 #+begin_src bash
-download "$URL_LINUX"       "$srcdir/$TAR_LINUX"
 download "$URL_BINUTILS"    "$srcdir/$TAR_BINUTILS"
 download "$URL_GCC"         "$srcdir/$TAR_GCC"
 download "$URL_MINIPKG2"    "$srcdir/$TAR_MINIPKG2"
@@ -228,24 +185,17 @@ fi
 #+end_src
 ** Configure minipkg2
 #+begin_src bash
-eminipkg2 repo --init "$URL_REPO"
+if [[ -d $rootdir/var/db/minipkg2/repo ]]; then
+    echo "Synchronizing the minipkg2 repository..."
+    eminipkg2 repo --sync
+else
+    echo "Initializing the minipkg2 repository..."
+    eminipkg2 repo --init "$URL_REPO"
+fi
 #+end_src
 * Install package: filesystem
 #+begin_src bash
-eminipkg2 install -y filesystem
-#+end_src
-
-* Install the kernel headers
-#+begin_src bash
-if [[ ! -d $rootdir/usr/include/linux ]]; then
-    echo "Installing the kernel headers..."
-    check tar -xf "$srcdir/$TAR_LINUX" -C "$builddir"
-    epushd "$builddir/linux-$V_LINUX"
-        cp "$topdir/kconfig" .config
-        check make ARCH="$KARCH" mrproper
-        check make ARCH="$KARCH" INSTALL_HDR_PATH="$rootdir/usr" headers_install
-    epopd
-fi
+eminipkg2 install -y -s filesystem
 #+end_src
 
 * Build the cross-toolchain
@@ -315,46 +265,7 @@ fi
 ** Build the C library
 #+begin_src bash
 if [[ ! -f $rootdir/lib/libc.so ]]; then
-    eminipkg2 install -y "$LIBC"
-    _tmp2() {
-    epushd "$builddir/$LIBC-$V_LIBC"
-        case "$LIBC" in
-        glibc)
-            echo "Building glibc..."
-            rm -rf build
-            mkdir build || exit 1
-            epushd build
-                echo "rootsbindir=/usr/sbin" > configparms
-                check ../configure                          \
-                    --prefix=/usr                           \
-                    --host="$MACH_TARGET"                   \
-                    --build="$MACH_BUILD"                   \
-                    --with-headers="$rootdir/usr/include"   \
-                    --enable-kernel=3.2                     \
-                    --disable-multilib                      \
-                    libc_cv_slibdir=/usr/lib
-                check pmake
-                check make DESTDIR="$rootdir" install
-
-                sed -i '/RTLDLIST=/s@/usr@@g' "$rootdir/usr/bin/ldd"
-            epopd
-            ;;
-        musl)
-            echo "Building musl..."
-            check ./configure                               \
-                CROSS_COMPILE="${MACH_TARGET}-"             \
-                --prefix=/usr                               \
-                --target="$MACH_TARGET"
-
-            check pmake
-            check make DESTDIR="$rootdir" install
-            ;;
-        ,*)
-            fail "Unsupported C library '$LIBC'"
-            ;;
-        esac
-    epopd
-    }
+    ecminipkg2 install -y "$LIBC"
 fi
 #+end_src
 
@@ -384,7 +295,72 @@ if [[ $BUILD_CCC = 1 ]]; then
     epopd
 fi
 #+end_src
-* Install system packages
+* Install temporary build environment
+** Install temporary packages
 #+begin_src bash
-eminipkg2 install -y busybox bash make binutils
+ecminipkg2 install -y -s tmp-{busybox,binutils,gcc,make,bash,minipkg2}
 #+end_src
+
+** Download sources for building minipkg2 in chroot
+#+begin_src bash
+HOST_PKGS="tmp-libstdcxx busybox bash binutils gcc make minipkg2"
+eminipkg2 download -y --deps $HOST_PKGS
+#+end_src
+
+** Setup system for chroot
+#+begin_src bash
+cat <<EOF >"$rootdir/root/chroot-script.sh"
+#!/tools/bin/bash
+export PATH=/tools/bin:/bin
+ln -sf /tools/bin/ash /bin/sh
+
+# Install system packages in order.
+minipkg2 install -y -s $HOST_PKGS || exit 1
+
+# Use newly installed tools from here on.
+export PATH=/bin
+
+# Clean up
+minipkg2 remove -y tmp-{minipkg2,busybox,bash,binutils,gcc,make,libstdcxx} || exit 1
+rm /root/chroot-script.sh
+EOF
+check chmod +x "$rootdir/root/chroot-script.sh"
+#+end_src
+
+* Enter chroot and run script
+#+begin_src bash
+umount_rootfs() {
+    pushd "$rootdir"
+        echo "Unmounting rootfs"
+        check sudo umount -R proc
+        check sudo umount -R dev
+        check sudo umount -R sys
+    popd
+}
+
+trap umount_rootfs EXIT
+
+check sudo mount --types proc /proc "$rootdir/proc"
+check sudo mount --rbind /sys "$rootdir/sys"
+check sudo mount --rbind /dev "$rootdir/dev"
+check sudo mount --make-rslave "$rootdir/sys"
+check sudo mount --make-rslave "$rootdir/dev"
+
+check sudo chroot "$rootdir" /root/chroot-script.sh
+
+trap - EXIT
+umount_rootfs
+#+end_src
+
+* Change owner of rootfs
+#+begin_src bash
+check sudo chown -R 0:0 "$rootdir"
+#+end_src
+
+* Installation finished
+#+begin_src bash
+echo *** Installation finished ***
+#+end_src
+
+* TODO
+- [ ] build qemu-user-static for foreign targets (like MACH_HOST=x86_64* MACH_TARGET=riscv32*)
