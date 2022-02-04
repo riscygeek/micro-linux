@@ -17,7 +17,7 @@ shopt -s expand_aliases
 
 V_BINUTILS="2.36.1"
 V_GCC="11.1.0"
-V_MINIPKG2="0.2.2"
+V_MINIPKG2="0.2.5.1"
 
 TAR_BINUTILS="binutils-${V_BINUTILS}.tar.gz"
 TAR_GCC="gcc-${V_GCC}.tar.gz"
@@ -210,25 +210,49 @@ fi
 
 ecminipkg2 install -y -s tmp-{busybox,binutils,gcc,make,bash,minipkg2}
 
-HOST_PKGS="tmp-libstdcxx busybox bash binutils gcc make minipkg2"
-eminipkg2 download -y --deps $HOST_PKGS
+eminipkg2 download -y --deps tmp-libstdcxx busybox bash binutils gcc make minipkg2
 
 cat <<EOF >"$rootdir/root/chroot-script.sh"
-#!/tools/bin/bash
-export PATH=/tools/bin:/bin
-ln -sf /tools/bin/ash /bin/sh
+#!/tools/bin/bash -e
 
-# Install system packages in order.
-minipkg2 install -y -s $HOST_PKGS || exit 1
+# Setup the environment.
+export PATH=/tools/bin:/usr/bin
+ln -sfv /tools/bin/ash /bin/sh
 
-# Use newly installed tools from here on.
-export PATH=/bin
+# Complete the installation of the temporary toolchain.
+minipkg2 install -y -s tmp-libstdcxx
+
+# Create the final system toolchain.
+minipkg2 install -y -s busybox bash binutils gcc make
+ln -sfv ash /bin/sh
+
+# Remove the temporary toolchain.
+minipkg2 remove -y tmp-{busybox,bash,binutils,gcc,make,libstdcxx}
+
+export PATH=/usr/bin:/tools/bin
+
+# Build the system package manager.
+minipkg2 install -y -s minipkg2
+
+export PATH=/usr/bin
 
 # Clean up
-minipkg2 remove -y tmp-{minipkg2,busybox,bash,binutils,gcc,make,libstdcxx} || exit 1
+minipkg2 remove -y tmp-minipkg2
+minipkg2 clean
 rm /root/chroot-script.sh
 EOF
 check chmod +x "$rootdir/root/chroot-script.sh"
+
+umount_rootfs() {
+    pushd "$rootdir"
+        echo "Unmounting rootfs"
+        check sudo umount -R proc
+        check sudo umount -R dev
+        check sudo umount -R sys
+    popd
+}
+
+trap umount_rootfs EXIT
 
 check sudo mount --types proc /proc "$rootdir/proc"
 check sudo mount --rbind /sys "$rootdir/sys"
@@ -238,7 +262,8 @@ check sudo mount --make-rslave "$rootdir/dev"
 
 check sudo chroot "$rootdir" /root/chroot-script.sh
 
-check sudo umount -R "$rootdir"/{proc,sys,dev}
+trap - EXIT
+umount_rootfs
 
 check sudo chown -R 0:0 "$rootdir"
 

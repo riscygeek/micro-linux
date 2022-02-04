@@ -64,7 +64,7 @@ shopt -s expand_aliases
 #+begin_src bash
 V_BINUTILS="2.36.1"
 V_GCC="11.1.0"
-V_MINIPKG2="0.2.3"
+V_MINIPKG2="0.2.5.1"
 #+end_src
 
 ** Package Tar Files
@@ -183,6 +183,7 @@ if [[ ! -f $toolsdir/bin/minipkg2 ]]; then
     epopd
 fi
 #+end_src
+
 ** Configure minipkg2
 #+begin_src bash
 if [[ -d $rootdir/var/db/minipkg2/repo ]]; then
@@ -303,25 +304,38 @@ ecminipkg2 install -y -s tmp-{busybox,binutils,gcc,make,bash,minipkg2}
 
 ** Download sources for building minipkg2 in chroot
 #+begin_src bash
-HOST_PKGS="tmp-libstdcxx busybox bash binutils gcc make minipkg2"
-eminipkg2 download -y --deps $HOST_PKGS
+eminipkg2 download -y --deps tmp-libstdcxx busybox bash binutils gcc make minipkg2
 #+end_src
 
 ** Setup system for chroot
 #+begin_src bash
 cat <<EOF >"$rootdir/root/chroot-script.sh"
-#!/tools/bin/bash
-export PATH=/tools/bin:/bin
-ln -sf /tools/bin/ash /bin/sh
+#!/tools/bin/bash -e
 
-# Install system packages in order.
-minipkg2 install -y -s $HOST_PKGS || exit 1
+# Setup the environment.
+export PATH=/tools/bin:/usr/bin
+ln -sfv /tools/bin/ash /bin/sh
 
-# Use newly installed tools from here on.
-export PATH=/bin
+# Complete the installation of the temporary toolchain.
+minipkg2 install -v -s tmp-libstdcxx
+
+# Create the final system toolchain.
+minipkg2 install -v -s busybox bash binutils gcc make
+ln -sfv ash /bin/sh
+
+# Remove the temporary toolchain.
+minipkg2 remove -v tmp-{busybox,bash,binutils,gcc,make,libstdcxx}
+
+export PATH=/usr/bin:/tools/bin
+
+# Build the system package manager.
+minipkg2 install -v -s minipkg2
+
+export PATH=/usr/bin
 
 # Clean up
-minipkg2 remove -y tmp-{minipkg2,busybox,bash,binutils,gcc,make,libstdcxx} || exit 1
+minipkg2 remove -v tmp-minipkg2
+minipkg2 clean
 rm /root/chroot-script.sh
 EOF
 check chmod +x "$rootdir/root/chroot-script.sh"
@@ -363,4 +377,5 @@ echo *** Installation finished ***
 #+end_src
 
 * TODO
+- [ ] Write a description and usage section
 - [ ] build qemu-user-static for foreign targets (like MACH_HOST=x86_64* MACH_TARGET=riscv32*)
