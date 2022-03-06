@@ -42,7 +42,7 @@
 ** Default build options.
 #+begin_src bash
 # TODO: option parsing
-MACH_TARGET="x86_64-micro-linux-musl"
+MACH_TARGET="$(uname -m)-micro-linux-musl"
 MACH_BUILD="$(gcc -dumpmachine)"
 #+end_src
 ** Directories
@@ -62,9 +62,9 @@ shopt -s expand_aliases
 * Package Information
 ** Package Versions
 #+begin_src bash
-V_BINUTILS="2.36.1"
-V_GCC="11.1.0"
-V_MINIPKG2="0.2.5.1"
+V_BINUTILS="2.37"
+V_GCC="11.2.0"
+V_MINIPKG2="0.4.7"
 #+end_src
 
 ** Package Tar Files
@@ -304,7 +304,7 @@ ecminipkg2 install -y -s tmp-{busybox,binutils,gcc,make,bash,minipkg2}
 
 ** Download sources for building minipkg2 in chroot
 #+begin_src bash
-eminipkg2 download -y --deps tmp-libstdcxx busybox bash binutils gcc make minipkg2
+eminipkg2 download -y --deps --skip-installed tmp-libstdcxx busybox bash binutils gcc make minipkg2
 #+end_src
 
 ** Setup system for chroot
@@ -312,31 +312,30 @@ eminipkg2 download -y --deps tmp-libstdcxx busybox bash binutils gcc make minipk
 cat <<EOF >"$rootdir/root/chroot-script.sh"
 #!/tools/bin/bash -e
 
+v="-v"
+
 # Setup the environment.
 export PATH=/tools/bin:/usr/bin
-ln -sfv /tools/bin/ash /bin/sh
+ln -sf $v /tools/bin/ash /bin/sh
 
 # Complete the installation of the temporary toolchain.
-minipkg2 install -v -s tmp-libstdcxx
+minipkg2 install $v -y -s tmp-libstdcxx
 
 # Create the final system toolchain.
-minipkg2 install -v -s busybox bash binutils gcc make
-ln -sfv ash /bin/sh
-
-# Remove the temporary toolchain.
-minipkg2 remove -v tmp-{busybox,bash,binutils,gcc,make,libstdcxx}
+minipkg2 install $v -y -s busybox bash binutils gcc make
+ln -sf $v ash /bin/sh
 
 export PATH=/usr/bin:/tools/bin
 
 # Build the system package manager.
-minipkg2 install -v -s minipkg2
+minipkg2 install $v -s -y minipkg2
 
 export PATH=/usr/bin
 
 # Clean up
-minipkg2 remove -v tmp-minipkg2
-minipkg2 clean
-rm /root/chroot-script.sh
+minipkg2 remove $v -y tmp-{busybox,bash,binutils,gcc,make,libstdcxx,minipkg2}
+minipkg2 clean $v
+rm $v /root/chroot-script.sh
 EOF
 check chmod +x "$rootdir/root/chroot-script.sh"
 #+end_src
@@ -373,7 +372,7 @@ check sudo chown -R 0:0 "$rootdir"
 
 * Installation finished
 #+begin_src bash
-echo *** Installation finished ***
+echo "*** Installation finished ***"
 #+end_src
 
 * TODO
