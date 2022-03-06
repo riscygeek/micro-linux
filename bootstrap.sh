@@ -3,6 +3,7 @@
 # TODO: option parsing
 MACH_TARGET="$(uname -m)-micro-linux-musl"
 MACH_BUILD="$(gcc -dumpmachine)"
+BRANCH="unstable"
 
 topdir="$PWD"
 srcdir="$topdir/src"
@@ -17,7 +18,7 @@ shopt -s expand_aliases
 
 V_BINUTILS="2.37"
 V_GCC="11.2.0"
-V_MINIPKG2="0.4.6"
+V_MINIPKG2="0.4.7"
 
 TAR_BINUTILS="binutils-${V_BINUTILS}.tar.gz"
 TAR_GCC="gcc-${V_GCC}.tar.gz"
@@ -117,7 +118,7 @@ if [[ -d $rootdir/var/db/minipkg2/repo ]]; then
     eminipkg2 repo --sync
 else
     echo "Initializing the minipkg2 repository..."
-    eminipkg2 repo --init "$URL_REPO"
+    eminipkg2 repo --branch "$BRANCH" --init "$URL_REPO"
 fi
 
 eminipkg2 install -y -s filesystem
@@ -149,6 +150,7 @@ if ! has "${MACH_TARGET}-gcc"; then
     echo "Building the stage-1 cross-gcc..."
     check tar -xf "$srcdir/$TAR_GCC" -C "$builddir"
     epushd "$builddir/gcc-$V_GCC"
+        check ./contrib/download_prerequisites
         rm -rf build
         mkdir build || exit 1
         epushd build
